@@ -20,7 +20,7 @@ contract Forwarder {
 
     event LogCall(address from, address to, bytes data); 
 
-    bytes32 private constant HASHED_NAME = keccak256(bytes("CatalogForworder"));
+    bytes32 private constant HASHED_NAME = keccak256(bytes("ExecutorDelegate"));
     bytes32 private constant HASHED_VERSION = keccak256(bytes("0.0.1"));
     bytes32 private constant TYPE_HASH = keccak256(
         "EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"
