@@ -12,7 +12,7 @@ import RenJS from "@renproject/ren";
 import { RenNetwork } from "@renproject/utils";
 import { ethers, providers, Wallet } from "ethers";
 
-interface EVMConstructor<EVM> {
+export interface EVMConstructor<EVM> {
   configMap: {
     [network in RenNetwork]?: EVMNetworkConfig;
   };
