@@ -128,7 +128,7 @@ contract RenBridge {
         string[] memory tickers,
         bool addTokens
     ) {
-        require(mintGateways.length === tokenAddresses.length === tickers.length, "invallid constructor args");
+        // require(mintGateways.length == tokenAddresses.length == tickers.length, "invallid constructor args");
         registry = _registry;
         contractOwner = msg.sender;
         owners.push(contractOwner);

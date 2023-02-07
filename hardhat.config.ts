@@ -98,14 +98,45 @@ const config: HardhatUserConfig = {
       accounts: [process.env.PK1!],
     },
     optimisticKovan: {
-      chainId: 69,
-      url: `https://opt-kovan.g.alchemy.com/v2/ikXkm5aNgVvP-_sgNrfOwcfKZXAujLlz`,
+      chainId: 420,
+      url: `https://goerli.optimism.io`,
       gas: 3000000,
+      accounts: [process.env.PK1!],
     },
     optimisticEthereum: {
       chainId: 10,
       url: `https://opt-mainnet.g.alchemy.com/v2/lVyoSuMFYXHQEpiNIbhPrOegODBvPV6d`,
       gas: 3000000,
+    },
+      moonBeamTestnet: {
+      chainId: 1287,
+      url: `https://rpc.api.moonbase.moonbeam.network`,
+      gas: 3000000,
+      accounts: [process.env.PK1!],
+    },
+     fantomTestnet: {
+      chainId: 4002,
+      url: `https://fantom-testnet.public.blastapi.io`,
+      gas: 3000000,
+      accounts: [process.env.PK1!],
+    },
+     avalancheTestnet: {
+      chainId: 43113,
+      url: `https://api.avax-test.network/ext/bc/C/rpc`,
+      gas: 3000000,
+      accounts: [process.env.PK1!],
+    },
+    kavaTestnet: {
+      chainId: 2221,
+      url: `https://evm.testnet.kava.io`,
+      gas: 3000000,
+      accounts: [process.env.PK1!],
+    },
+     arbitrumTestnet: {
+      chainId: 421613,
+      url: `https://goerli-rollup.arbitrum.io/rpc`,
+      gas: 3000000,
+      accounts: [process.env.PK1!],
     },
   },
   // deterministicDeployment: (network: string) => {
