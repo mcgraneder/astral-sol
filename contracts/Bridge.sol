@@ -1,33 +1,9 @@
 pragma solidity >= 0.8.9;
 pragma abicoder v2;
 
-import "./utils/SafeMath.sol";
+import { IERC20 } from "./interfaces/IERC20.sol";
 import "hardhat/console.sol";
-//interface functions needed to get info on RenBTC for current user after mint is successful
-//we also need the interface to be able to transfer tokens to and from this contract address
-interface IERC20 {
 
-    function balanceOf(address account) external view returns (uint256);
-
-    function symbol() external view returns (string memory);
-
-    function totalSupply() external view returns (uint256);
-
-    function approve(address spender, uint256 amount) external returns (bool);
-
-    function allowance(address owner, address spender) external view returns (uint256);
-
-    function transfer(address recipient, uint256 amount) external returns (bool);
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
-
-    event Transfer(address indexed from, address indexed to, uint256 value);
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
 
 interface IMintGatewayv3 {
     function getAsset() external virtual returns (string memory);
@@ -100,8 +76,6 @@ interface IGatewayRegistry {
 
 
 contract RenBridge {
-
-    using SafeMath for uint256;
 
     IGatewayRegistry public registry;
 
@@ -217,11 +191,12 @@ contract RenBridge {
 
     //admin only owner modifier. only the contract creator and people he chooses can add supporting tokens
     modifier onlyOwner() {
-    
+        bool hasBeenFound = false;
         for (uint i = 0; i < owners.length; i++) {
-
-            if(owners[i] == msg.sender) revert("only the admin can call this function");
+            if(owners[i] == msg.sender) hasBeenFound = true;
+            break;
         }
+        require(hasBeenFound, "only admin can call");
         _; 
     }
 
@@ -253,15 +228,14 @@ contract RenBridge {
         string memory _ticker,
         address tokenAddress
         ) public 
-        tokenExists(_ticker) 
         onlyOwner() 
         returns (bool) {
 
-        for (uint i = 0; i < tokenList.length; i++) {
+        // for (uint i = 0; i < tokenList.length; i++) {
 
-            require(keccak256(bytes(tokenList[i])) != keccak256(bytes(_ticker)), "token has already been added"); 
-        }
-        require(keccak256(bytes(IERC20(tokenAddress).symbol())) == keccak256(bytes(_ticker)), "inputted ticker does not match the token symbol");
+        //     require(keccak256(bytes(tokenList[i])) != keccak256(bytes(_ticker)), "token has already been added"); 
+        // }
+        // require(keccak256(bytes(IERC20(tokenAddress).symbol())) == keccak256(bytes(_ticker)), "inputted ticker does not match the token symbol");
 
         address mintGateway = address(registry.getMintGatewayByToken(tokenAddress));
         tokenMapping[_ticker] = Token(_ticker, tokenAddress, mintGateway);
@@ -395,19 +369,16 @@ contract RenBridge {
 
     //function that allows the user to deposit their tokens into this smart contract for the
     //purpose of transfering the, back to the tokens origunal chain. (need to call approve from the client)
-    function transferFrom(
-        address sender, 
-        address recipient, 
+    function transferFrom( 
         uint256 amount, 
         string memory _tokenAddress) 
-        public 
-        tokenExists(_tokenAddress) 
+        public  
         returns (bool) {
 
         uint256 userWalletBalance = IERC20(toAddress(_tokenAddress)).balanceOf(msg.sender);
         require(userWalletBalance > amount, "insufficent funds in your wallet");
         
-        IERC20(toAddress(_tokenAddress)).transferFrom(sender, recipient, amount);
+        IERC20(toAddress(_tokenAddress)).transferFrom(msg.sender, address(this), amount);
         tokenBalance[msg.sender][_tokenAddress] += amount;
 
         return true;
