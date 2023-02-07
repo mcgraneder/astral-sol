@@ -21,6 +21,7 @@ import { getEVMProvider, getEVMChain, EVMConstructor } from './utils/getProvider
 import { Chain } from '@renproject/chains';
 import { EthereumBaseChain } from '@renproject/chains-ethereum/base';
 import { PorividerConfig } from "./constant/networks";
+import { chainsBaseConfig, ChainBaseConfig } from './constant/constants';
 
 const isAddressValid = (address:string):boolean  => {
     if(/^0x[a-fA-F0-9]{40}$/.test(address)) return  true
@@ -73,23 +74,23 @@ function requireQueryParams(params: Array<string>) {
   };
 }
 
-/**
- * Get catalog token balance of a metaversal account
- * */
-app.get("/balanceOf", requireQueryParams(["token", "of"]), async (req, res) => {
-  console.log("GET /balanceOf");
-  const token = req.query.token!.toString();
-  const of = req.query.of!.toString();
-  console.log("token = " + token);
-  console.log("of = " + of);
+// /**
+//  * Get catalog token balance of a metaversal account
+//  * */
+// app.get("/balanceOf", requireQueryParams(["token", "of"]), async (req, res) => {
+//   console.log("GET /balanceOf");
+//   const token = req.query.token!.toString();
+//   const of = req.query.of!.toString();
+//   console.log("token = " + token);
+//   console.log("of = " + of);
 
-  if (!isAddressValid(of)) throw new APIError("Invalid user address");
-  if (!isAddressValid(token)) throw new APIError("Invalid token address");
+//   if (!isAddressValid(of)) throw new APIError("Invalid user address");
+//   if (!isAddressValid(token)) throw new APIError("Invalid token address");
 
-  let balance = await Catalog.balanceOf(token, of);
-  console.log("balance = " + balance.toString());
-  res.json({ result: balance.toString() });
-});
+//   let balance = await Catalog.balanceOf(token, of);
+//   console.log("balance = " + balance.toString());
+//   res.json({ result: balance.toString() });
+// });
 
 /**
  * Get the catalog token balances of all registered tokens for the specified user.
@@ -99,8 +100,9 @@ app.get("/balancesOf", requireQueryParams(["of"]), async (req, res) => {
   const of = req.query.of!.toString();
   const chainName = req.query.chainName!.toString();
 
-  const batchSize = parseInt(req.query.batchSize!.toString());
-  if (!isAddressValid(of)) throw new APIError("Invalid address");
+  console.log(of, chainName)
+  const batchSize = 10//parseInt(req.query.batchSize!.toString());
+//   if (!isAddressValid(of)) throw new APIError("Invalid address");
 
     chainProvider = new Web3(new Web3.providers.HttpProvider(
         PorividerConfig[chainName].url
@@ -109,56 +111,34 @@ app.get("/balancesOf", requireQueryParams(["of"]), async (req, res) => {
     MulticallProvider = new Web3ProviderConnector(chainProvider);
     MulticallService = new MultiCallService(
       MulticallProvider,
-      MulticallAddressFromNetwork[NETWORKS.ETHEREUM_GOERLI]
+      chainsBaseConfig[chainName].multicallContract
     );
 
-  // The parameters are optional, if not specified, the default will be used
-  const params: MultiCallParams = {
-    chunkSize: Number(batchSize),
-    retriesLimit: 3,
-    blockNumber: "latest",
-  };
+    let balancesMap = {} as { [x: string]: string };
+    const assets = Object.values(chainsBaseConfig[chainName].assets)
+    // The parameters are optional, if not specified, the default will be used
+    const params: MultiCallParams = {
+        chunkSize: Number(batchSize),
+        retriesLimit: 3,
+        blockNumber: "latest",
+    };
 
-  let balancesMap = {} as { [x: string]: string };
-  let allowancesMap = {} as { [x: string]: string };
-
-  const { ethereumBalances, ethereumAllowances, } = await TokenMulticall(
+  const { bridgeTokenBalances, walletTokenBalances, } = await TokenMulticall(
     MulticallService,
     MulticallProvider,
     of,
-    tokens,
+    chainsBaseConfig[chainName].bridgeAddress,
+    assets,
     params,
-    network
   );
 
-  tokens["Ethereum"].forEach((token: TokenInfo, i: number) => {
-    try {
-      balancesMap[token.address] = MulticallProvider
-        .decodeABIParameter<BigNumber>("uint256", ethereumBalances[i])
-        .toString();
-    } catch (error) {
-      balancesMap[token.address] = "0";
-    }
-    try {
-      allowancesMap[token.address] = MulticallProvider
-        .decodeABIParameter<BigNumber>("uint256", ethereumAllowances[i])
-        .toString();
-    } catch (error) {
-      allowancesMap[token.address] = "0";
-    }
-  });
-
-  for (const token of registeredTokens) {
-    token.balance = balancesMap[token.address];
-    token.allowance = allowancesMap[token.address];
-    token.earning = "0";
-  }
+  console.log(bridgeTokenBalances)
+  console.log(walletTokenBalances)
 
   res.json({
     result: {
-      registeredTokens: registeredTokens,
-      balances: balancesMap,
-      allowances: allowancesMap,
+      bridgeTokenBalances: bridgeTokenBalances,
+      walletTokenBalances: walletTokenBalances,
     },
   });
 });

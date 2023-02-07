@@ -390,9 +390,9 @@ contract RenBridge {
         return IERC20(toAddress(_tokenAddress)).balanceOf(address(this));
     }
 
-    function getUserbalanceInContract(string memory _tokenAddress) public view returns (uint256) {
+    function getUserbalanceInContract(string memory _tokenAddress, address owner) public view returns (uint256) {
 
-        return tokenBalance[msg.sender][_tokenAddress];
+        return tokenBalance[owner][_tokenAddress];
     }
 
     function getUserTokenBalance(string memory _tokenAddress, address _owner) public view returns (uint256) {

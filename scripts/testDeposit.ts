@@ -1,9 +1,10 @@
 import { RenBridge } from "../typechain-types";
 import { ethers } from "hardhat";
 import { IERC20 } from "../typechain-types";
+
 async function main() {
     let [deployer] = await ethers.getSigners();
-    const TokenAContractFactory = await ethers.getContractAt("RenBridge", "0xeDE6D6861B26cbeDACd487A31E2E236065fB97dA") as RenBridge;
+    const TokenAContractFactory = await ethers.getContractAt("RenBridge", "0xffE167291A3A815A7Af8bEA9a9522387AcEb6f6f") as RenBridge;
     const tokenContract = await ethers.getContractAt("IERC20", "0x880Ad65DC5B3F33123382416351Eef98B4aAd7F1") as IERC20;
     
     const approvalTx = await tokenContract.connect(deployer).approve(TokenAContractFactory.address, 1000)
@@ -14,7 +15,7 @@ async function main() {
     const depositReceipt = await depositTx.wait(1)
     console.log(depositReceipt)
 
-    const userBalance = await TokenAContractFactory.getUserbalanceInContract("0x880Ad65DC5B3F33123382416351Eef98B4aAd7F1")
+    const userBalance = await TokenAContractFactory.getUserbalanceInContract("0x880Ad65DC5B3F33123382416351Eef98B4aAd7F1", deployer.address)
     console.log(userBalance)
 }
 
