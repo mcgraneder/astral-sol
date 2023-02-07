@@ -1,18 +1,44 @@
 import { ethers } from "hardhat";
+import { Chain } from "@renproject/utils";
+import { Asset } from "@renproject/chains"
+import { RenBridge } from "../typechain-types";
+import { RenBridge__factory } from "../typechain-types";
 
+export const supportedAssets =
+ [
+              "BTC",
+              "BCH",
+              "DGB",
+              "DOGE",
+              "FIL",
+              "LUNA",
+              "ZEC",
+              "ETH",
+              "BNB",
+              "AVAX",
+              "FTM",
+              "ArbETH",
+              "MATIC",
+              "GLMR",
+              "KAVA",
+              "USDC_Goerli",
+              "USDT_Goerli",
+              "USDC_Goerli",
+              "DAI_Goerli"
+]     
+        
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const ONE_YEAR_IN_SECS = 365 * 24 * 60 * 60;
-  const unlockTime = currentTimestampInSeconds + ONE_YEAR_IN_SECS;
+  const registry = "0x5076a1F237531fa4dC8ad99bb68024aB6e1Ff701"
 
-  const lockedAmount = ethers.utils.parseEther("1");
+  const Bridge = await ethers.getContractFactory("RenBridge") as RenBridge__factory;
+  const bridge = await Bridge.deploy(registry) as RenBridge;
 
-  const Lock = await ethers.getContractFactory("Lock");
-  const lock = await Lock.deploy(unlockTime, { value: lockedAmount });
+  await bridge.deployed();
 
-  await lock.deployed();
+  const tokenList = await bridge.getTokenList()
+  console.log(tokenList)
 
-  console.log(`Lock with 1 ETH and unlock timestamp ${unlockTime} deployed to ${lock.address}`);
+  console.log(`contract deployed to ${bridge.address}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere

@@ -1,41 +1,25 @@
 import { BinanceSmartChain, Ethereum } from "@renproject/chains-ethereum";
-import { Bitcoin } from "@renproject/chains-bitcoin"
 import RenJS from "@renproject/ren";
+
 import { RenNetwork } from "@renproject/utils";
 import { getEVMChain } from "../api/utils/getProvider";
-const ADMIN_KEY = process.env.PK1! 
+const ADMIN_KEY = process.env.PK2!
 
-const bridge = async (contractAddress: string) => {
-   const binance = getEVMChain(BinanceSmartChain, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
+const bridge = async () => {
+  const binanceSmartChain = getEVMChain(BinanceSmartChain, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
   const ethereum = getEVMChain(Ethereum, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
   const asset = "USDT_Goerli";
-  const ren = new RenJS("testnet").withChains(binance, ethereum);
+  const ren = new RenJS("testnet").withChains(binanceSmartChain, ethereum);
 
   const gateway = await ren.gateway({
     asset,
-    from: ethereum.Account({ amount: 1000}),
-    to: binance.Contract({
-                to: contractAddress,
-                method: "deposit",
-                withRenParams: true,
-                params: [
-                    {
-                        name: "symbol",
-                        type: "string",
-                        value: "USDT",
-                    },
-                    {
-                        name: "message",
-                        type: "string",
-                        value: "Hello world.",
-                    },
-                ],
-            }),
+    from: ethereum.Account({ amount: 100 }),
+    to: binanceSmartChain.Account(),
   });
   await gateway.inSetup.approval?.submit!();
   // All transactions now follow a submit/wait pattern - see TxSubmitter
   // interface.
-  await gateway.inSetup.approval?.wait();
+  await gateway.inSetup.approval.wait();
 
   await gateway.in!.submit!().on("progress", console.log);
   // Wait for the first confirmation.
@@ -77,4 +61,4 @@ const bridge = async (contractAddress: string) => {
   });
 };
 
-bridge("0x47bd0705a3B7369C2F27C424911056277069dba7");
+bridge();
