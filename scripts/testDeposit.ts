@@ -10,7 +10,7 @@ async function main() {
     const approvalReceipt = await approvalTx.wait(1)
     console.log(approvalReceipt)
 
-    const depositTx = await TokenAContractFactory.transferFrom(deployer.address, TokenAContractFactory.address, 1000, "0x880Ad65DC5B3F33123382416351Eef98B4aAd7F1")
+    const depositTx = await TokenAContractFactory.transferFrom(1000, "0x880Ad65DC5B3F33123382416351Eef98B4aAd7F1")
     const depositReceipt = await depositTx.wait(1)
     console.log(depositReceipt)
 
