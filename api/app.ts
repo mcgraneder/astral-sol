@@ -62,6 +62,11 @@ let FantomChain: Fantom;
 
 let RenJSProvider: RenJS;
 
+
+let multicallService: MultiCallService;
+let chainProvider: any;
+let MulticallProvider: Web3ProviderConnector;
+
 app.use(express.json());
 app.use(cors({ origin: "*" }));
 
@@ -114,11 +119,23 @@ app.get(
     const of = req.query.of!.toString();
     const chainName = req.query.chainName!.toString();
 
+    chainProvider = new Web3(
+      new Web3.providers.HttpProvider(PorividerConfig[chainName].url)
+    );
+
+    MulticallProvider = new Web3ProviderConnector(chainProvider);
+    multicallService = new MultiCallService(
+      MulticallProvider,
+      chainsBaseConfig[chainName].multicallContract
+    );
+
     let balancesMap = {} as { [x: string]: MulticallReturn };
     const assets = Object.values(chainsBaseConfig[chainName].assets);
     const tickers = Object.keys(chainsBaseConfig[chainName].assets);
 
     const { bridgeTokenBalances, walletTokenBalances } = await TokenMulticall(
+      multicallService,
+      MulticallProvider,
       chainName,
       of,
       assets
@@ -129,8 +146,14 @@ app.get(
         tokenAddress: asset.tokenAddress,
         chain: chainName as Chain,
         asset: tickers[index] as Asset,
-        walletBalance: walletTokenBalances[index],
-        bridgeBalance: bridgeTokenBalances[index],
+        walletBalance: MulticallProvider.decodeABIParameter<BigNumber>(
+          "uint256",
+          walletTokenBalances[index]
+        ).toString(),
+        bridgeBalance: MulticallProvider.decodeABIParameter<BigNumber>(
+          "uint256",
+          bridgeTokenBalances[index]
+        ).toString(),
       };
     });
 
