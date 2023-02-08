@@ -4,10 +4,21 @@ import { MultiCallService } from "@1inch/multicall";
 import { Web3ProviderConnector } from "@1inch/multicall/connector";
 import { MultiCallParams } from "@1inch/multicall/model";
 import { Bitcoin } from "@renproject/chains-bitcoin";
-import { BinanceSmartChain, Goerli, Ethereum, Arbitrum, Avalanche, Fantom, Polygon, Kava, Moonbeam, Optimism } from '@renproject/chains-ethereum';
+import {
+  BinanceSmartChain,
+  Goerli,
+  Ethereum,
+  Arbitrum,
+  Avalanche,
+  Fantom,
+  Polygon,
+  Kava,
+  Moonbeam,
+  Optimism,
+} from "@renproject/chains-ethereum";
 import { MockChain } from "@renproject/mock-provider";
 import { RenJS } from "@renproject/ren";
-import {  RenNetwork } from "@renproject/utils";
+import { RenNetwork } from "@renproject/utils";
 import BigNumber from "bignumber.js";
 import cors from "cors";
 import { config } from "dotenv";
@@ -17,16 +28,21 @@ import { ADMIN_KEY } from "../utils/config";
 import { RenChain } from "./chain/Renchain";
 import { APIError } from "./utils/APIError";
 import TokenMulticall from "./utils/multicall";
-import { getEVMProvider, getEVMChain, EVMConstructor } from './utils/getProvider';
-import { Chain } from '@renproject/chains';
-import { EthereumBaseChain } from '@renproject/chains-ethereum/base';
+import {
+  getEVMProvider,
+  getEVMChain,
+  EVMConstructor,
+} from "./utils/getProvider";
+import { Chain, Asset } from "@renproject/chains";
+import { EthereumBaseChain } from "@renproject/chains-ethereum/base";
 import { PorividerConfig } from "./constant/networks";
-import { chainsBaseConfig, ChainBaseConfig } from './constant/constants';
+import { chainsBaseConfig, ChainBaseConfig } from "./constant/constants";
+import { MulticallReturn, MulticallAsset } from "./types/index";
 
-const isAddressValid = (address:string):boolean  => {
-    if(/^0x[a-fA-F0-9]{40}$/.test(address)) return  true
-    return false
-}
+const isAddressValid = (address: string): boolean => {
+  if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
+  return false;
+};
 
 config();
 
@@ -41,15 +57,10 @@ let AvalancheChain: Avalanche;
 let PolygonChain: Polygon;
 let KavaChain: Kava;
 let MoonBeamChain: Moonbeam;
-let OptimismChain: Optimism
-let FantomChain: Fantom
+let OptimismChain: Optimism;
+let FantomChain: Fantom;
 
-let RenJSProvider: RenJS
-
-let network: RenNetwork;
-let MulticallService: MultiCallService;
-let chainProvider: any;
-let MulticallProvider: Web3ProviderConnector;
+let RenJSProvider: RenJS;
 
 app.use(express.json());
 app.use(cors({ origin: "*" }));
@@ -95,53 +106,41 @@ function requireQueryParams(params: Array<string>) {
 /**
  * Get the catalog token balances of all registered tokens for the specified user.
  */
-app.get("/balancesOf", requireQueryParams(["of"]), async (req, res) => {
-  console.log("GET /balancesOf");
-  const of = req.query.of!.toString();
-  const chainName = req.query.chainName!.toString();
+app.get(
+  "/balancesOf",
+  requireQueryParams(["of", "chainName"]),
+  async (req, res) => {
+    console.log("GET /balancesOf");
+    const of = req.query.of!.toString();
+    const chainName = req.query.chainName!.toString();
 
-  console.log(of, chainName)
-  const batchSize = 10//parseInt(req.query.batchSize!.toString());
-//   if (!isAddressValid(of)) throw new APIError("Invalid address");
+    let balancesMap = {} as { [x: string]: MulticallReturn };
+    const assets = Object.values(chainsBaseConfig[chainName].assets);
+    const tickers = Object.keys(chainsBaseConfig[chainName].assets);
 
-    chainProvider = new Web3(new Web3.providers.HttpProvider(
-        PorividerConfig[chainName].url
-    ));
-
-    MulticallProvider = new Web3ProviderConnector(chainProvider);
-    MulticallService = new MultiCallService(
-      MulticallProvider,
-      chainsBaseConfig[chainName].multicallContract
+    const { bridgeTokenBalances, walletTokenBalances } = await TokenMulticall(
+      chainName,
+      of,
+      assets
     );
 
-    let balancesMap = {} as { [x: string]: string };
-    const assets = Object.values(chainsBaseConfig[chainName].assets)
-    // The parameters are optional, if not specified, the default will be used
-    const params: MultiCallParams = {
-        chunkSize: Number(batchSize),
-        retriesLimit: 3,
-        blockNumber: "latest",
-    };
+    assets.forEach((asset: MulticallAsset, index: number) => {
+      balancesMap[tickers[index]] = {
+        tokenAddress: asset.tokenAddress,
+        chain: chainName as Chain,
+        asset: tickers[index] as Asset,
+        walletBalance: walletTokenBalances[index],
+        bridgeBalance: bridgeTokenBalances[index],
+      };
+    });
 
-  const { bridgeTokenBalances, walletTokenBalances, } = await TokenMulticall(
-    MulticallService,
-    MulticallProvider,
-    of,
-    chainsBaseConfig[chainName].bridgeAddress,
-    assets,
-    params,
-  );
-
-  console.log(bridgeTokenBalances)
-  console.log(walletTokenBalances)
-
-  res.json({
-    result: {
-      bridgeTokenBalances: bridgeTokenBalances,
-      walletTokenBalances: walletTokenBalances,
-    },
-  });
-});
+    res.json({
+      result: {
+        multicall: balancesMap,
+      },
+    });
+  }
+);
 
 app.use((err: APIError, req: Request, res: Response, next: NextFunction) => {
   console.error(err);
@@ -157,35 +156,36 @@ app.use((req, res, next) => {
 });
 
 async function setup() {
+  const network = RenNetwork.Testnet;
 
-    const network = RenNetwork.Testnet
+  ArbitrumChain = getEVMChain(Arbitrum, network, { privateKey: ADMIN_KEY });
+  AvalancheChain = getEVMChain(Avalanche, network, { privateKey: ADMIN_KEY });
+  BinanceSmartChainChain = getEVMChain(BinanceSmartChain, network, {
+    privateKey: ADMIN_KEY,
+  });
+  FantomChain = getEVMChain(Fantom, network, { privateKey: ADMIN_KEY });
+  PolygonChain = getEVMChain(Polygon, network, { privateKey: ADMIN_KEY });
+  OptimismChain = getEVMChain(Optimism, network, { privateKey: ADMIN_KEY });
+  MoonBeamChain = getEVMChain(Moonbeam, network, { privateKey: ADMIN_KEY });
+  KavaChain = getEVMChain(Kava, network, { privateKey: ADMIN_KEY });
+  EthereumChain = new Ethereum({
+    network,
+    defaultTestnet: "goerli",
+    // ...getEVMProvider(Ethereum, network, catalogAdminKey),
+    ...getEVMProvider(Goerli, network, { privateKey: ADMIN_KEY }),
+  });
 
-    ArbitrumChain = getEVMChain(Arbitrum, network, { privateKey: ADMIN_KEY });
-    AvalancheChain = getEVMChain(Avalanche, network, { privateKey: ADMIN_KEY });
-    BinanceSmartChainChain = getEVMChain(BinanceSmartChain, network, { privateKey: ADMIN_KEY });
-    FantomChain = getEVMChain(Fantom, network, { privateKey: ADMIN_KEY });
-    PolygonChain = getEVMChain(Polygon, network, { privateKey: ADMIN_KEY });
-    OptimismChain = getEVMChain(Optimism, network, { privateKey: ADMIN_KEY });
-    MoonBeamChain = getEVMChain(Moonbeam, network, { privateKey: ADMIN_KEY });
-    KavaChain = getEVMChain(Kava, network, { privateKey: ADMIN_KEY });
-    EthereumChain = new Ethereum({
-        network,
-        defaultTestnet: "goerli",
-        // ...getEVMProvider(Ethereum, network, catalogAdminKey),
-        ...getEVMProvider(Goerli, network, { privateKey: ADMIN_KEY }),
-        });
-    
-    RenJSProvider = new RenJS(RenNetwork.Testnet).withChains(
-        ArbitrumChain,
-        AvalancheChain,
-        BinanceSmartChainChain,
-        EthereumChain,
-        FantomChain,
-        PolygonChain,
-        OptimismChain,
-        KavaChain,
-        MoonBeamChain
-    );
+  RenJSProvider = new RenJS(RenNetwork.Testnet).withChains(
+    ArbitrumChain,
+    AvalancheChain,
+    BinanceSmartChainChain,
+    EthereumChain,
+    FantomChain,
+    PolygonChain,
+    OptimismChain,
+    KavaChain,
+    MoonBeamChain
+  );
 
   EthereumChain.signer
     ?.getAddress()
@@ -193,16 +193,22 @@ async function setup() {
       console.log(`Fetching ${address} balances...`);
     })
     .catch(() => {});
-    [ 
-        ArbitrumChain, AvalancheChain, BinanceSmartChainChain, EthereumChain, 
-        FantomChain, PolygonChain, OptimismChain, KavaChain, MoonBeamChain
-    ]
-    .forEach(async (chain: EthereumBaseChain) => {
+  [
+    ArbitrumChain,
+    AvalancheChain,
+    BinanceSmartChainChain,
+    EthereumChain,
+    FantomChain,
+    PolygonChain,
+    OptimismChain,
+    KavaChain,
+    MoonBeamChain,
+  ].forEach(async (chain: EthereumBaseChain) => {
     try {
       console.log(
-        `${chain.chain} balance: ${ethers.utils.formatEther(await chain.signer!.getBalance())} ${
-          chain.network.config.nativeCurrency.symbol
-        }`
+        `${chain.chain} balance: ${ethers.utils.formatEther(
+          await chain.signer!.getBalance()
+        )} ${chain.network.config.nativeCurrency.symbol}`
       );
     } catch (error) {
       console.error(`Unable to fetch ${chain.chain} balance.`);
