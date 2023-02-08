@@ -8,15 +8,18 @@ import {
   BinanceSmartChain,
   Goerli,
   Ethereum,
-  Arbitrum,
   Avalanche,
   Fantom,
   Polygon,
   Kava,
   Moonbeam,
-  Optimism,
 } from "@renproject/chains-ethereum";
-import { MockChain } from "@renproject/mock-provider";
+
+//chainIds in official ren package incorrect. correct change 
+//made in these ovverride configs
+import { Optimism } from "./chain/OptimismOverrideConfig";
+import { Arbitrum } from "./chain/ArbitrumOverrideConfig";
+
 import { RenJS } from "@renproject/ren";
 import { RenNetwork } from "@renproject/utils";
 import BigNumber from "bignumber.js";
@@ -25,18 +28,16 @@ import { config } from "dotenv";
 import express, { NextFunction, Request, Response } from "express";
 import hre, { ethers } from "hardhat";
 import { ADMIN_KEY } from "../utils/config";
-import { RenChain } from "./chain/Renchain";
 import { APIError } from "./utils/APIError";
 import TokenMulticall from "./utils/multicall";
 import {
   getEVMProvider,
   getEVMChain,
-  EVMConstructor,
 } from "./utils/getProvider";
 import { Chain, Asset } from "@renproject/chains";
 import { EthereumBaseChain } from "@renproject/chains-ethereum/base";
 import { PorividerConfig } from "./constant/networks";
-import { chainsBaseConfig, ChainBaseConfig } from "./constant/constants";
+import { chainsBaseConfig } from "./constant/constants";
 import { MulticallReturn, MulticallAsset } from "./types/index";
 
 const isAddressValid = (address: string): boolean => {
