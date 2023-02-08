@@ -30,15 +30,16 @@ import hre, { ethers } from "hardhat";
 import { ADMIN_KEY } from "../utils/config";
 import { APIError } from "./utils/APIError";
 import TokenMulticall from "./utils/multicall";
-import {
-  getEVMProvider,
-  getEVMChain,
-} from "./utils/getProvider";
+import { getEVMProvider, getEVMChain, getChain } from "./utils/getProvider";
 import { Chain, Asset } from "@renproject/chains";
 import { EthereumBaseChain } from "@renproject/chains-ethereum/base";
 import { PorividerConfig } from "./constant/networks";
 import { chainsBaseConfig } from "./constant/constants";
 import { MulticallReturn, MulticallAsset } from "./types/index";
+import { RenBridge } from "../typechain-types/Bridge.sol/RenBridge";
+import { BridgeDeployments } from "../utils/deployments";
+import BridgeABI from "../utils/ABIs/BridgeABI.json";
+import { returnContract } from "./utils/getContract";
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -62,7 +63,6 @@ let OptimismChain: Optimism;
 let FantomChain: Fantom;
 
 let RenJSProvider: RenJS;
-
 
 let multicallService: MultiCallService;
 let chainProvider: any;
@@ -92,22 +92,35 @@ function requireQueryParams(params: Array<string>) {
 }
 
 // /**
-//  * Get catalog token balance of a metaversal account
+//  * Get mint assets for bridge contract on given chain
 //  * */
-// app.get("/balanceOf", requireQueryParams(["token", "of"]), async (req, res) => {
-//   console.log("GET /balanceOf");
-//   const token = req.query.token!.toString();
-//   const of = req.query.of!.toString();
-//   console.log("token = " + token);
-//   console.log("of = " + of);
+app.get(
+  "/bridgeTokens",
+  requireQueryParams(["chainName"]),
+  async (req, res) => {
+    console.log("GET /bridgeTokens");
+    const chainName = req.query.chainName!.toString();
+    // const account = req.query.chainName!.toString();
 
-//   if (!isAddressValid(of)) throw new APIError("Invalid user address");
-//   if (!isAddressValid(token)) throw new APIError("Invalid token address");
+    const { provider, signer } = getChain(
+      RenJSProvider,
+      chainName,
+      RenNetwork.Testnet
+    );
 
-//   let balance = await Catalog.balanceOf(token, of);
-//   console.log("balance = " + balance.toString());
-//   res.json({ result: balance.toString() });
-// });
+    const bridgeContract = (await returnContract(
+      BridgeDeployments[chainName],
+      BridgeABI,
+      provider,
+    )) as RenBridge;
+
+    const bridgeMintAssets = await bridgeContract.getTokenList();
+
+    res.json({
+      result: bridgeMintAssets,
+    });
+  }
+);
 
 /**
  * Get the catalog token balances of all registered tokens for the specified user.
