@@ -6,7 +6,7 @@ async function main() {
   let [deployer] = await ethers.getSigners();
   const TokenAContractFactory = (await ethers.getContractAt(
     "RenBridge",
-    "0xffE167291A3A815A7Af8bEA9a9522387AcEb6f6f"
+    "0x9dFFd9DA32975f0955e3EfB62669aC167376d8AA"
   )) as RenBridge;
 
   const withdrawlTx = await TokenAContractFactory.connect(deployer).transfer(
