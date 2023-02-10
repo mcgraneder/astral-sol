@@ -1,25 +1,25 @@
-import { BinanceSmartChain, Ethereum } from "@renproject/chains-ethereum";
+import { BinanceSmartChain, Ethereum, Polygon } from '@renproject/chains-ethereum';
 import RenJS from "@renproject/ren";
 
 import { RenNetwork } from "@renproject/utils";
 import { getEVMChain } from "../api/utils/getProvider";
-const ADMIN_KEY = process.env.PK2!
+const ADMIN_KEY = process.env.PK1!
 
 const bridge = async () => {
   const binanceSmartChain = getEVMChain(BinanceSmartChain, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
-  const ethereum = getEVMChain(Ethereum, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
-  const asset = "USDT_Goerli";
+  const ethereum = getEVMChain(Polygon, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
+  const asset = "EURT";
   const ren = new RenJS("testnet").withChains(binanceSmartChain, ethereum);
 
   const gateway = await ren.gateway({
     asset,
-    from: ethereum.Account({ amount: 100 }),
+    from: ethereum.Account({ amount: 10000000 }),
     to: binanceSmartChain.Account(),
   });
   await gateway.inSetup.approval?.submit!();
   // All transactions now follow a submit/wait pattern - see TxSubmitter
   // interface.
-  await gateway.inSetup.approval.wait();
+  await gateway.inSetup.approval?.wait();
 
   await gateway.in!.submit!().on("progress", console.log);
   // Wait for the first confirmation.

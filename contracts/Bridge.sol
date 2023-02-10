@@ -353,7 +353,6 @@ contract RenBridge {
         uint256 amount, 
         string memory _tokenAddress) 
         public 
-        tokenExists(_tokenAddress) 
         returns (bool) {
 
         require(tokenBalance[msg.sender][_tokenAddress] >= amount, "innsufficent balance");

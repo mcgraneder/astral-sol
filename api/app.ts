@@ -40,6 +40,8 @@ import { RenBridge } from "../typechain-types/Bridge.sol/RenBridge";
 import { BridgeDeployments } from "../utils/deployments";
 import BridgeABI from "../utils/ABIs/BridgeABI.json";
 import { returnContract } from "./utils/getContract";
+import { IERC20 } from "../typechain-types";
+import { ERC20ABI } from "@renproject/chains-ethereum/contracts";
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -111,7 +113,7 @@ app.get(
     const bridgeContract = (await returnContract(
       BridgeDeployments[chainName],
       BridgeABI,
-      provider,
+      provider
     )) as RenBridge;
 
     const bridgeMintAssets = await bridgeContract.getTokenList();
@@ -121,6 +123,40 @@ app.get(
     });
   }
 );
+
+// /**
+//  * Get mint assets for bridge contract on given chain
+//  * */
+app.get(
+  "/getTokenApproval",
+  requireQueryParams(["chainName", "assetName", "account"]),
+  async (req, res) => {
+    console.log("GET /bridgeTokens");
+    const chainName = req.query.chainName!.toString();
+    const assetName = req.query.assetName!.toString();
+    const account = req.query.account!.toString();
+
+    const assets = chainsBaseConfig[chainName].assets;
+
+    const { provider } = getChain(RenJSProvider, chainName, RenNetwork.Testnet);
+
+    const tokenContract = (await returnContract(
+      assets[assetName].tokenAddress,
+      ERC20ABI,
+      provider
+    )) as IERC20;
+
+    const allowance = await tokenContract.allowance(
+      account,
+      BridgeDeployments[chainName]
+    );
+
+    res.json({
+      result: allowance,
+    });
+  }
+);
+
 
 /**
  * Get the catalog token balances of all registered tokens for the specified user.
