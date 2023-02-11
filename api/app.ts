@@ -42,6 +42,8 @@ import BridgeABI from "../utils/ABIs/BridgeABI.json";
 import { returnContract } from "./utils/getContract";
 import { IERC20 } from "../typechain-types";
 import { ERC20ABI } from "@renproject/chains-ethereum/contracts";
+import { BigNumber as BN } from "ethers";
+
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -128,7 +130,51 @@ app.get(
 //  * Get mint assets for bridge contract on given chain
 //  * */
 app.get(
-  "/getTokenApproval",
+  "/getSingleBalance",
+  requireQueryParams(["chainName", "assetName", "account"]),
+  async (req, res) => {
+    console.log("GET /bridgeTokens");
+    const chainName = req.query.chainName!.toString();
+    const assetName = req.query.assetName!.toString();
+    const account = req.query.account!.toString();
+
+    const assets = chainsBaseConfig[chainName].assets;
+
+    const { provider } = getChain(RenJSProvider, chainName, RenNetwork.Testnet);
+
+    const tokenContract = (await returnContract(
+      assets[assetName].tokenAddress,
+      ERC20ABI,
+      provider
+    )) as IERC20;
+
+     const bridgeContract = (await returnContract(
+       BridgeDeployments[chainName],
+       BridgeABI,
+       provider
+     )) as RenBridge;
+
+    const balanceProms: BN[] = [
+      await tokenContract.balanceOf(account),
+      await bridgeContract.getUserbalanceInContract(assets[assetName].tokenAddress, account)
+    ] 
+    const  [tokenBalance, bridgeBalance] = await Promise.all(balanceProms)
+
+    res.json({
+      balances: {
+        tokenBalance: tokenBalance,
+        bridgeBalance: bridgeBalance,
+        b: assets[assetName].tokenAddress
+      },
+    });
+  }
+);
+
+// /**
+//  * Get mint assets for bridge contract on given chain
+//  * */
+app.get(
+  "/getAssetBalance",
   requireQueryParams(["chainName", "assetName", "account"]),
   async (req, res) => {
     console.log("GET /bridgeTokens");

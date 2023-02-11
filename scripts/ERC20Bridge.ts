@@ -7,8 +7,8 @@ const ADMIN_KEY = process.env.PK1!
 
 const bridge = async () => {
   const binanceSmartChain = getEVMChain(BinanceSmartChain, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
-  const ethereum = getEVMChain(Polygon, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
-  const asset = "EURT";
+  const ethereum = getEVMChain(Ethereum, RenNetwork.Testnet, { privateKey: ADMIN_KEY });
+  const asset = "USDT_Goerli";
   const ren = new RenJS("testnet").withChains(binanceSmartChain, ethereum);
 
   const gateway = await ren.gateway({
