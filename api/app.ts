@@ -95,6 +95,41 @@ function requireQueryParams(params: Array<string>) {
   };
 }
 
+
+// /**
+//  * Get mint assets for bridge contract on given chain
+//  * */
+app.get(
+  "/getTokenApproval",
+  requireQueryParams(["chainName", "assetName", "account"]),
+  async (req, res) => {
+    console.log("GET /bridgeTokens");
+    const chainName = req.query.chainName!.toString();
+    const assetName = req.query.assetName!.toString();
+    const account = req.query.account!.toString();
+
+    const assets = chainsBaseConfig[chainName].assets;
+
+    const { provider } = getChain(RenJSProvider, chainName, RenNetwork.Testnet);
+
+    const tokenContract = (await returnContract(
+      assets[assetName].tokenAddress,
+      ERC20ABI,
+      provider
+    )) as IERC20;
+
+    const allowance = await tokenContract.allowance(
+      account,
+      BridgeDeployments[chainName]
+    );
+
+    res.json({
+      result: allowance,
+    });
+  }
+);
+
+
 // /**
 //  * Get mint assets for bridge contract on given chain
 //  * */
