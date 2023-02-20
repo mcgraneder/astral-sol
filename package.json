@@ -4,9 +4,7 @@
     "test": "npx hardhat test",
     "coverage": "npx hardhat coverage",
     "start": "./start.sh",
-    "testnet": "npx hardhat run api/app.ts --network catalogTestnet",
-    "mainnet": "npx hardhat run api/app.ts --network catalogMainnet",
-    "workerTestnet": "npx hardhat run api/index.ts --network catalogTestnet",
+    "server": "npx hardhat run api/app.ts",
     "upload-artifacts": "ts-node scripts/push_artifacts_s3.ts"
   },
   "devDependencies": {

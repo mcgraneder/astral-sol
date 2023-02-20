@@ -1,5 +1,4 @@
 import { BinanceSmartChain, Ethereum } from "@renproject/chains-ethereum";
-import { Bitcoin } from "@renproject/chains-bitcoin"
 import RenJS from "@renproject/ren";
 import { RenNetwork } from "@renproject/utils";
 import { getEVMChain } from "../api/utils/getProvider";
