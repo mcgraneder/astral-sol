@@ -12,24 +12,24 @@ const bridge = async (contractAddress: string) => {
 
   const gateway = await ren.gateway({
     asset,
-    from: ethereum.Account({ amount: 1000}),
+    from: ethereum.Account({ amount: 1000 }),
     to: binance.Contract({
-                to: contractAddress,
-                method: "deposit",
-                withRenParams: true,
-                params: [
-                    {
-                        name: "symbol",
-                        type: "string",
-                        value: "USDT",
-                    },
-                    {
-                        name: "message",
-                        type: "string",
-                        value: "Hello world.",
-                    },
-                ],
-            }),
+      to: "0x47bd0705a3B7369C2F27C424911056277069dba7",
+      method: "deposit",
+      withRenParams: true,
+      params: [
+        {
+          name: "symbol",
+          type: "string",
+          value: "USDT",
+        },
+        {
+          name: "message",
+          type: "string",
+          value: "Hello world.",
+        },
+      ],
+    }),
   });
   await gateway.inSetup.approval?.submit!();
   // All transactions now follow a submit/wait pattern - see TxSubmitter

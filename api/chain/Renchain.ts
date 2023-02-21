@@ -62,7 +62,6 @@ export class RenChain extends EthereumBaseChain {
   } = {
     [RenNetwork.Mainnet]: renchainMainnet,
     [RenNetwork.Testnet]: renchainTestnet,
-    [RenNetwork.Devnet]: renchainChaosnet,
   };
   public configMap = RenChain.configMap;
 

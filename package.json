@@ -5,6 +5,7 @@
     "coverage": "npx hardhat coverage",
     "start": "./start.sh",
     "server": "npx hardhat run api/app.ts",
+    "build": "tsc",
     "upload-artifacts": "ts-node scripts/push_artifacts_s3.ts"
   },
   "devDependencies": {
