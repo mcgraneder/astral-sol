@@ -14,7 +14,7 @@ export const createTransaction = (
     _id: new mongoose.Types.ObjectId(),
     fromChain,
     fromChainTxid,
-    fromChainAddress,
+    fromChainAddress: "undefined",
     toChain,
     toChainTxid: undefined,
     toChainAddress: undefined,
@@ -26,7 +26,9 @@ export const createTransaction = (
     gatewayAddress,
   });
 
-  return transaction
+  console.log(transaction);
+
+  transaction
     .save()
     .then((transaction) => console.log("success", transaction))
     .catch((error) => {
@@ -34,15 +36,15 @@ export const createTransaction = (
     });
 };
 export const readTransaction = async (transactionId: string) => {
-  const transaction = await Transactions.findOne({ fromChainTxid: transactionId });
-  console.log(transaction ? true : false);
+  console.log(transactionId);
+  const transaction = Transactions.findOne({ fromChainTxid: transactionId });
 
-  return transaction ? true : false;
+  return transaction;
   //   console.log(user)
 };
 export const readAllTransaction = async () => {
   const transactions = await Transactions.find({
-    confirmations: { $lt: 5 },
+    confirmations: { $lt: 7 },
   });
 
   return transactions;
@@ -64,9 +66,9 @@ export const updateTransaction = async (
       renVMHash: renVMHash,
       status: status,
       toChainAddress: toChainAddress,
-      toChainTxid: toChainTxid
+      toChainTxid: toChainTxid,
     }
-  ).then((result) => console.log(result));
+  ).then((result: any) => console.log(result));
 };
 export const deleteTransaction = () => {
   //   return Transactions.findByIdAndDelete(transactionId).then((transaction) =>

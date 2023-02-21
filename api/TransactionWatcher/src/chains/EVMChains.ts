@@ -1,4 +1,4 @@
-import { Catalog, Ethereum, EVMNetworkConfig } from "@renproject/chains";
+import { Ethereum, EVMNetworkConfig, Goerli } from "@renproject/chains";
 import { EthArgs } from "@renproject/chains-ethereum//utils/abi";
 import { resolveRpcEndpoints } from "@renproject/chains-ethereum//utils/generic";
 import { EVMPayloadInterface } from "@renproject/chains-ethereum//utils/payloads/evmParams";
@@ -11,15 +11,27 @@ import { ALCHEMY_KEY, INFURA_KEY } from "../utils/emviornmentVariables";
 import abis from "../ABIs/mintABI.json";
 import { ChainDetails, ChainType } from "../types/renTypes";
 
-type EthereumClass = Catalog | Ethereum;
+type EthereumClass = Ethereum;
 
-export const CatalogDetails: ChainDetails<Catalog> = {
-  chain: Catalog.chain,
-  chainPattern: /^(catalog|cat|renchain)$/i,
-  assets: Catalog.assets,
+export const CatalogDetails: ChainDetails<Goerli> = {
+  chain: Goerli.chain,
+  chainPattern: /^(goerli|goerlieth|geth)$/i,
+  assets: Goerli.assets[RenNetwork.Testnet],
   type: ChainType.EVMChain,
-  usePublicProvider: (network: RenNetwork) =>
-    getPublicEthereumProvider<Catalog>(Catalog, network),
+  etherscanApi: {
+    [RenNetwork.Testnet]: "https://api-goerli.etherscan.io/api",
+  },
+  usePublicProvider: (network: RenNetwork) => {
+    if (network === RenNetwork.Testnet) {
+      return getPublicEthereumProvider<Goerli>(Goerli, network);
+    } else {
+      return null;
+    }
+  },
+
+  // multiwalletConfig: (network: RenNetwork) => [
+  //   injectedConnectorFactory(Goerli.configMap),
+  // ],
 
   getOutputParams: async (
     mintChain: Chain,
@@ -27,7 +39,7 @@ export const CatalogDetails: ChainDetails<Catalog> = {
     payload: string,
     asset: string
   ): Promise<EVMPayloadInterface> =>
-    getEthereumMintParams(mintChain as Catalog, to, payload, asset),
+    getEthereumMintParams(mintChain as Goerli, to, payload, asset),
 };
 
 const getPublicEthereumProvider = <T extends EthereumClass>(

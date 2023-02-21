@@ -5,7 +5,7 @@ import { ChainDetails, ChainType } from "../types/renTypes";
 
 export const BitcoinDetails: ChainDetails<Bitcoin> = {
   chain: Bitcoin.chain,
-  assets: Bitcoin.assets,
+  assets: Bitcoin.assets.testnet,
   chainPattern: /^(bitcoin|btc)$/i,
   type: ChainType.LockChain,
   usePublicProvider: (network: RenNetwork) => new Bitcoin({ network }),
@@ -18,8 +18,3 @@ export const BitcoinDetails: ChainDetails<Bitcoin> = {
     return (mintChain as Bitcoin).Address(to);
   },
 };
-
-
-
-
-

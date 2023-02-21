@@ -16,17 +16,30 @@ export interface ChainDetails<ChainClass extends Chain = Chain> {
   chainPattern: RegExp;
   assets: { [asset: string]: string };
   type: ChainType;
+  // primaryColor: "#627eea";
+  // textColor: "white";
+
+  // EVM chains only
+  etherscanApi?: {
+    [network in RenNetwork]?: string;
+  };
+
   usePublicProvider: (network: RenNetwork) => ChainClass | null;
+
+  // multiwalletConfig?: (network: RenNetwork) => Array<ConnectorConfig<any, any>>;
+
   getOutputParams?: (
     mintChain: Chain,
     to: string,
     payload: string,
     asset: string
   ) => Promise<any>;
+
   getTokenAccount?: (
     mintChain: ContractChain,
     asset: string
   ) => Promise<string | null>;
+
   createTokenAccount?: (
     mintChain: ContractChain,
     asset: string

@@ -2,10 +2,10 @@
 import { Chain, ContractChain, RenNetwork } from "@renproject/utils";
 import { CatalogDetails } from "./EVMChains";
 import { BitcoinDetails } from "./BTC";
-import { Catalog, Bitcoin } from "@renproject/chains";
+import { Ethereum, Bitcoin } from "@renproject/chains";
 import RenJS from "@renproject/ren";
 import { EVMPayloadInterface } from "@renproject/chains-ethereum//utils/payloads/evmParams";
-import { NETWORK } from '../utils/emviornmentVariables';
+import { NETWORK } from "../utils/emviornmentVariables";
 const RenVMChain = "RenVM";
 
 export enum TransactionType {
@@ -61,12 +61,13 @@ export const getCatalogInitalGateway = (): EVMPayloadInterface<string, any> => {
 
 //expand to all chains after MVP
 export const setUpChains = () => {
-  const network = NETWORK;
-  const ethereum = new Catalog({
+  const network = RenNetwork.Testnet;
+  const ethereum = new Ethereum({
     network,
-    provider: Catalog.configMap[network]!.config.rpcUrls[0],
+    defaultTestnet: "goerli",
+    provider: "https://goerli.infura.io/v3/ac9d2c8a561a47739b23c52e6e7ec93f",
   });
-  const bitcoin = new Bitcoin({ network });
+  const bitcoin = new Bitcoin({ network: RenNetwork.Testnet });
   const renJS = new RenJS(network).withChains(ethereum, bitcoin);
   return { network, ethereum, bitcoin, renJS };
 };

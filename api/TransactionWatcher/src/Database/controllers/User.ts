@@ -3,7 +3,6 @@ import mongoose from "mongoose";
 import User from "../models/User";
 
 export const createUser = (address: string) => {
-
   const user = new User({
     _id: new mongoose.Types.ObjectId(),
     address,
@@ -16,12 +15,16 @@ export const createUser = (address: string) => {
       console.error(error);
     });
 };
-export const readUser = async(userId: string) => {
-  const user = User.find({ address: userId })
-  return user
-//   console.log(user)
+export const readUser = async (userId: string) => {
+  const user = User.find({ address: userId });
+  return user;
+  //   console.log(user)
 };
-export const readAllUser = (req: Request, res: Response, next: NextFunction) => {
+export const readAllUser = (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
   return User.find()
     .then((user) => {
       res.status(200).json({ user });
@@ -45,8 +48,11 @@ export const updateUser = (req: Request, res: Response, next: NextFunction) => {
     .catch((error) => res.status(500).json({ error }));
 };
 export const deleteUser = (req: Request, res: Response, next: NextFunction) => {
-     const userId = req.params.userId;
+  const userId = req.params.userId;
 
-     return User.findByIdAndDelete(userId).then((user) => (user ? res.status(201).json({ message: "deleted" }) : res.status(404).json({ message: "Not found" })))
+  return User.findByIdAndDelete(userId).then((user) =>
+    user
+      ? res.status(201).json({ message: "deleted" })
+      : res.status(404).json({ message: "Not found" })
+  );
 };
-
