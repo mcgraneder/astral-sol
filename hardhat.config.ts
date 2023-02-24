@@ -48,17 +48,13 @@ const config: HardhatUserConfig = {
       chainId: 3120,
       url: `http://146.190.200.111/mainnet`,
       gas: 3000000,
-      accounts: [
-        process.env.PK1!,
-      ],
+      accounts: [process.env.PK1!],
     },
     catalogTestnet: {
       chainId: 18414,
       url: `https://rpc.catalog.fi/testnet`,
       gas: 3000000,
-      accounts: [
-        process.env.PK1!,
-      ],
+      accounts: [process.env.PK1!],
     },
     catalogChaosnet: {
       chainId: 5,
@@ -108,21 +104,21 @@ const config: HardhatUserConfig = {
       url: `https://opt-mainnet.g.alchemy.com/v2/lVyoSuMFYXHQEpiNIbhPrOegODBvPV6d`,
       gas: 3000000,
     },
-      moonBeamTestnet: {
+    moonBeamTestnet: {
       chainId: 1287,
       url: `https://rpc.api.moonbase.moonbeam.network`,
       gas: 3000000,
       accounts: [process.env.PK1!],
     },
-     fantomTestnet: {
+    fantomTestnet: {
       chainId: 4002,
       url: `https://fantom-testnet.public.blastapi.io`,
       gas: 3000000,
       accounts: [process.env.PK1!],
     },
-     avalancheTestnet: {
+    avalancheTestnet: {
       chainId: 43113,
-      url: `https://api.avax-test.network/ext/bc/C/rpc`,
+      url: "https://avalanche-fuji.infura.io/v3/ee6f6d4062c94480bb240cc1892100b7",
       gas: 3000000,
       accounts: [process.env.PK1!],
     },
@@ -132,7 +128,7 @@ const config: HardhatUserConfig = {
       gas: 3000000,
       accounts: [process.env.PK1!],
     },
-     arbitrumTestnet: {
+    arbitrumTestnet: {
       chainId: 421613,
       url: `https://goerli-rollup.arbitrum.io/rpc`,
       gas: 3000000,

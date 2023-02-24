@@ -16,7 +16,6 @@ export default async function TokenMulticall(
   of: string,
   assets: Asset[]
 ) {
-
   // The parameters are optional, if not specified, the default will be used
   const params: MultiCallParams = {
     chunkSize: 10,

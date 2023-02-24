@@ -15,7 +15,7 @@ import {
   Moonbeam,
 } from "@renproject/chains-ethereum";
 
-//chainIds in official ren package incorrect. correct change 
+//chainIds in official ren package incorrect. correct change
 //made in these ovverride configs
 import { Optimism } from "./chain/OptimismOverrideConfig";
 import { Arbitrum } from "./chain/ArbitrumOverrideConfig";
@@ -43,7 +43,6 @@ import { returnContract } from "./utils/getContract";
 import { IERC20 } from "../typechain-types";
 import { ERC20ABI } from "@renproject/chains-ethereum/contracts";
 import { BigNumber as BN } from "ethers";
-
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -95,7 +94,6 @@ function requireQueryParams(params: Array<string>) {
   };
 }
 
-
 // /**
 //  * Get mint assets for bridge contract on given chain
 //  * */
@@ -128,7 +126,6 @@ app.get(
     });
   }
 );
-
 
 // /**
 //  * Get mint assets for bridge contract on given chain
@@ -183,23 +180,26 @@ app.get(
       provider
     )) as IERC20;
 
-     const bridgeContract = (await returnContract(
-       BridgeDeployments[chainName],
-       BridgeABI,
-       provider
-     )) as RenBridge;
+    const bridgeContract = (await returnContract(
+      BridgeDeployments[chainName],
+      BridgeABI,
+      provider
+    )) as RenBridge;
 
     const balanceProms: BN[] = [
       await tokenContract.balanceOf(account),
-      await bridgeContract.getUserbalanceInContract(assets[assetName].tokenAddress, account)
-    ] 
-    const  [tokenBalance, bridgeBalance] = await Promise.all(balanceProms)
+      await bridgeContract.getUserbalanceInContract(
+        assets[assetName].tokenAddress,
+        account
+      ),
+    ];
+    const [tokenBalance, bridgeBalance] = await Promise.all(balanceProms);
 
     res.json({
       balances: {
         tokenBalance: tokenBalance,
         bridgeBalance: bridgeBalance,
-        b: assets[assetName].tokenAddress
+        b: assets[assetName].tokenAddress,
       },
     });
   }
@@ -237,7 +237,6 @@ app.get(
     });
   }
 );
-
 
 /**
  * Get the catalog token balances of all registered tokens for the specified user.

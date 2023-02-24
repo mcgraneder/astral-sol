@@ -1417,3 +1417,5 @@ export const chainsBaseConfig: { [chain: string]: ChainBaseConfig } = {
     },
   },
 };
+
+
