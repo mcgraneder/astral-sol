@@ -3,6 +3,8 @@ import { MultiCallService } from "@1inch/multicall";
 import { Web3ProviderConnector } from "@1inch/multicall/connector";
 import { chainsBaseConfig } from "../constant/constants";
 import BridgeABI from "../../utils/ABIs/BridgeABI.json";
+import TestBridgeABI from "../../utils/ABIs/TestBridgeABI.json";
+
 import { MultiCallParams } from "@1inch/multicall/model";
 
 type Asset = {
@@ -23,15 +25,23 @@ export default async function TokenMulticall(
     blockNumber: "latest",
   };
 
+  // const add =
+  //   chainName === "Ethereum"
+  //     ? "0x30774f9B5d010E8891625c487fC23f2dbBd5925E"
+  //     : chainsBaseConfig[chainName].bridgeAddress;
+  const func = chainName === "Ethereum" ? "getContractTokenbalance" : "getUserbalanceInContract"
+  const ABI = chainName === "Ethereum" ? TestBridgeABI : BridgeABI;
+
+  console.log(chainName)
   const promises: string[][] = [
     await MulticallService.callByChunks(
       assets.map((asset: Asset) => {
         return {
           to: chainsBaseConfig[chainName].bridgeAddress,
           data: MulticallProvider.contractEncodeABI(
-            BridgeABI,
+            ABI,
             chainsBaseConfig[chainName].bridgeAddress,
-            "getUserbalanceInContract",
+            func,
             [asset.tokenAddress, of]
           ),
         };

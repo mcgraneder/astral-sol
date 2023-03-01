@@ -18,7 +18,7 @@ let config = {
   data: data,
 };
 
-axios(config)
+axios(config as any)
   .then((response) => {
     console.log(response.data);
   })
