@@ -16,13 +16,16 @@ import {Payment} from "./libraries/Payment.sol";
 
 address constant FEE_CURRENCY = 0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE;
 
+interface RenAdapter {
+    function permissionedWithdraw(address _from, address _to, address _token, uint256 _amount) external;
+}
 
 contract AstralAdapter is Context, ERC2771Context, AccessControlEnumerable, Payment {
     using SafeERC20 for IERC20;
 
     IGatewayRegistry public registry;
     Lender public lender;
-    CatalogAdapter public catalogAdapter;
+    RenAdapter public catalogAdapter;
 
     bytes32 public constant RELAYER = keccak256("RELAYER");
     bytes32 public constant BRIDGE_ADMIN = keccak256("BRIDGE_ADMIN");
@@ -40,7 +43,7 @@ contract AstralAdapter is Context, ERC2771Context, AccessControlEnumerable, Paym
         address roleAdminAddress,
         address[] memory relayers,
         address forwarder,
-        CatalogAdapter catalogAdapter_
+        RenAdapter catalogAdapter_
     ) payable ERC2771Context(forwarder) {
         registry = registry_;
         lender = lender_;
