@@ -72,6 +72,7 @@ config();
 
 const app = express();
 const port = 4000;
+const nonceOfset = 1
 
 let BitcoinChain: Bitcoin;
 let EthereumChain: Ethereum;
@@ -459,7 +460,7 @@ setup().then(() =>
 	  astralUSDTBridgeEth.on(
       "AssetLocked",
       async (_from, _value, timestamp, _nonce) => {
-        // const _nonce = 63512828
+      
         console.log(_from, _value, timestamp);
         const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
 
@@ -519,6 +520,7 @@ setup().then(() =>
 
     astralUSDTBridgeBsc.on("AssetBurnt", async (_from, _value, timestamp, _nonce) => {
       console.log(_from, _value, timestamp);
+	
       const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
 
       const nHash = keccak256(

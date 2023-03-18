@@ -53,6 +53,7 @@ export enum Asset {
   USDC_Goerli = "USDC_Goerli",
   DAI_Goerli = "DAI_Goerli",
   REN_Goerli = "REN_Goerli",
+  ASTRAL_USDT = "ASTRAL_USDT"
 }
 
 
@@ -508,6 +509,10 @@ export const chainsBaseConfig: { [chain: string]: ChainBaseConfig } = {
         tokenAddress: "0xF0dbeB58522b96cdCdB790BCaD9Fd8Da7D7fa35c",
         mintGatewayAddress: "0xda07AD211799496A8473cdeBAA91Df03db156644",
       },
+      [Asset.ASTRAL_USDT]: {
+        tokenAddress: "0xD93521D9E6B21D54D5276203848f1397624De87A",
+        mintGatewayAddress: "0xda07AD211799496A8473cdeBAA91Df03db156644",
+      },
     },
   },
   [Ethereum.chain]: {
@@ -657,6 +662,10 @@ export const chainsBaseConfig: { [chain: string]: ChainBaseConfig } = {
       },
       [Asset.USDT_Goerli]: {
         tokenAddress: "0x270203070650134837F3C33Fa7D97DC456eF624e",
+        mintGatewayAddress: "0xda07AD211799496A8473cdeBAA91Df03db156644",
+      },
+      [Asset.ASTRAL_USDT]: {
+        tokenAddress: "0xb7fEB55476D3fC26724Ba23794FB9c723c71b9b0",
         mintGatewayAddress: "0xda07AD211799496A8473cdeBAA91Df03db156644",
       },
     },
