@@ -583,6 +583,8 @@ setup().then(() =>
     astralUSDTBridgeBsc.on(
       "AssetBurnt",
       async (_from, _value, timestamp, _nonce) => {
+        const { userCollectionRef } = await Firebase();
+
         console.log(_from, _value, timestamp);
 
         const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
@@ -644,7 +646,14 @@ setup().then(() =>
             _nonce,
             registryEth.address
           );
-        const mintTxReceipt = await mintTransaction.wait(1);
+        const mintTxReceipt = await mintTransaction.wait(6);
+
+        const txData = await updateFirebaseTx(
+          userCollectionRef,
+          _from,
+          "verifying",
+          "completed"
+        );
 
         console.log(mintTransaction);
       }
