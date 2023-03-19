@@ -180,6 +180,36 @@ app.get("/testFirebase", async (req, res) => {
 //  * Get mint assets for bridge contract on given chain
 //  * */
 app.get(
+  "/getBridgeApproval",
+  requireQueryParams(["chainName", "assetName", "account"]),
+  async (req, res) => {
+    console.log("GET /bridgeApproval");
+    const chainName = req.query.chainName!.toString();
+    const assetName = req.query.assetName!.toString();
+    const account = req.query.account!.toString();
+
+    const assets = chainsBaseConfig[chainName].assets;
+
+    const { provider } = getChain(RenJSProvider, chainName, RenNetwork.Testnet);
+
+    const tokenContract = (await returnContract(
+      assets[assetName].tokenAddress,
+      ERC20ABI,
+      provider
+    )) as IERC20;
+
+    const allowance = await tokenContract.allowance(
+      account,
+      BridgeAssets[Ethereum.chain]["aUSDT"].bridgeAddress
+    );
+
+    res.json({
+      result: allowance,
+    });
+  }
+);
+
+app.get(
   "/getTokenApproval",
   requireQueryParams(["chainName", "assetName", "account"]),
   async (req, res) => {
