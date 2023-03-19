@@ -520,7 +520,7 @@ setup().then(() =>
       async (_from, _value, timestamp, _nonce) => {
         const { userCollectionRef } = await Firebase();
 
-        await updateFirebaseTx(userCollectionRef, _from, "pending", "verifying");
+        // await updateFirebaseTx(userCollectionRef, _from, "pending", "verifying");
 
         console.log(_from, _value, timestamp);
         const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
