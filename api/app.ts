@@ -129,6 +129,10 @@ async function updateFirebaseTx(
     .collection(Collections.txs)
     .where("status", "==", currentStatus)
     .get();
+  
+    const txData = renVMTxIdDocSnapshot.docs[0].data();
+
+    console.log(renVMTxIdDocSnapshot)
 
   if (renVMTxIdDocSnapshot.empty) {
     console.log(`Transaction does not exists`);
@@ -140,6 +144,8 @@ async function updateFirebaseTx(
     .collection(Collections.txs)
     .doc(renVMTxSnapshot)
     .update({ status: newStatus });
+
+    return txData;
 }
 
 function requireQueryParams(params: Array<string>) {
@@ -160,25 +166,15 @@ function requireQueryParams(params: Array<string>) {
 
 app.get("/testFirebase", async (req, res) => {
   const { userCollectionRef } = await Firebase();
-  const txSnapshot = await userCollectionRef
-    .where("accountId", "==", "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149")
-    .get();
-
-  const userSnapshot = await userCollectionRef.doc(txSnapshot.docs[0].id).get();
-  const userDocRef = userSnapshot.ref;
-  const renVMTxIdDocSnapshot = await userDocRef
-    .collection(Collections.txs)
-    .where(
-      "hash",
-      "==",
-      "0x65a228e79f32613a86be570bdc20a7021a935914c0c959d335e363b26d316c43"
-    )
-    .get();
-  const renVMTxSnapshot = renVMTxIdDocSnapshot.docs[0].id;
-  const txData = renVMTxIdDocSnapshot.docs[0].data();
+  const txData = await updateFirebaseTx(
+    userCollectionRef,
+    "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149",
+    "verifying",
+    "complete"
+  );
 
   res.json({
-    result: renVMTxSnapshot,
+    result: txData,
   });
 });
 
@@ -573,11 +569,11 @@ setup().then(() =>
         const mintTransaction = await astralUSDTBridgeBsc
           .connect(signer)
           .mint(pHash, nHash, sigString, _value, _nonce, _from);
-        const mintTxReceipt = await mintTransaction.wait(10);
+        const mintTxReceipt = await mintTransaction.wait(1);
 
-        await updateFirebaseTx(
+        const txData = await updateFirebaseTx(
           userCollectionRef,
-          _from,
+          "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149",
           "verifying",
           "complete"
         );
