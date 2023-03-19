@@ -127,12 +127,10 @@ async function updateFirebaseTx(
   const userDocRef = userSnapshot.ref;
   const renVMTxIdDocSnapshot = await userDocRef
     .collection(Collections.txs)
-    .where("status", "==", currentStatus)
+    .orderBy("date", "desc")
     .get();
   
-    const txData = renVMTxIdDocSnapshot.docs[0].data();
-
-    console.log(renVMTxIdDocSnapshot)
+  const txData = renVMTxIdDocSnapshot.docs[0].data();
 
   if (renVMTxIdDocSnapshot.empty) {
     console.log(`Transaction does not exists`);
@@ -170,7 +168,7 @@ app.get("/testFirebase", async (req, res) => {
     userCollectionRef,
     "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149",
     "verifying",
-    "complete"
+    "completed"
   );
 
   res.json({
@@ -569,13 +567,13 @@ setup().then(() =>
         const mintTransaction = await astralUSDTBridgeBsc
           .connect(signer)
           .mint(pHash, nHash, sigString, _value, _nonce, _from);
-        const mintTxReceipt = await mintTransaction.wait(1);
+        const mintTxReceipt = await mintTransaction.wait(6);
 
         const txData = await updateFirebaseTx(
           userCollectionRef,
-          "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149",
+          _from,
           "verifying",
-          "complete"
+          "completed"
         );
 
         console.log(mintTxReceipt)
