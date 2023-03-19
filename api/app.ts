@@ -43,10 +43,10 @@ import { returnContract } from "./utils/getContract";
 import { IERC20 } from "../typechain-types";
 import { ERC20ABI } from "@renproject/chains-ethereum/contracts";
 import { BigNumber as BN } from "ethers";
-import { Contract } from '@ethersproject/contracts';
-import { BridgeBase } from '../typechain-types/contracts/AstralABridge/BridgeBaseAdapter.sol/BridgeBase';
-import { TestNativeERC20Asset } from '../typechain-types/contracts/AstralABridge/TestNativeERC20Asset';
-import { TestNativeAssetRegistry } from '../typechain-types/contracts/AstralABridge/tesNativeAssetRegistry.sol/TestNativeAssetRegistry';
+import { Contract } from "@ethersproject/contracts";
+import { BridgeBase } from "../typechain-types/contracts/AstralABridge/BridgeBaseAdapter.sol/BridgeBase";
+import { TestNativeERC20Asset } from "../typechain-types/contracts/AstralABridge/TestNativeERC20Asset";
+import { TestNativeAssetRegistry } from "../typechain-types/contracts/AstralABridge/tesNativeAssetRegistry.sol/TestNativeAssetRegistry";
 import { AstralERC20Logic } from "../typechain-types/contracts/AstralABridge/AstralERC20Asset/AstralERC20.sol/AstralERC20Logic";
 import AstralERC20AssetABI from "../constants/ABIs/AstralERC20AssetABI.json";
 import BridgeAdapterABI from "../constants/ABIs/BridgeAdapterABI.json";
@@ -62,6 +62,9 @@ import {
 import { ecrecover, ecsign, pubToAddress } from "ethereumjs-util";
 import { randomBytes, Ox } from "./utils/cryptoHelpers";
 import { keccak256 } from "web3-utils";
+import Firebase from "./services/firebase-admin";
+import Collections from "./services/Collections";
+import { updateTransaction } from './TransactionWatcher/src/Database/controllers/Transactons';
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -72,7 +75,7 @@ config();
 
 const app = express();
 const port = 4000;
-const nonceOfset = 1
+const nonceOfset = 1;
 
 let BitcoinChain: Bitcoin;
 let EthereumChain: Ethereum;
@@ -97,8 +100,7 @@ let testNativeERC20Asset: TestNativeERC20Asset;
 let registry: TestNativeAssetRegistry;
 let registryEth: TestNativeAssetRegistry;
 let provider: any;
-let providerBsc: any
-
+let providerBsc: any;
 
 app.use(express.json());
 app.use(cors({ origin: "*" }));
@@ -106,6 +108,39 @@ app.use(cors({ origin: "*" }));
 app.get("/", (req, res) => {
   res.status(200).send({ result: "ok" });
 });
+
+async function updateFirebaseTx(
+  userCollectionRef: FirebaseFirestore.CollectionReference<FirebaseFirestore.DocumentData>,
+  account: string,
+  currentStatus: string,
+  newStatus: string
+) {
+  const txSnapshot = await userCollectionRef
+    .where("accountId", "==", account)
+    .get();
+
+  if (txSnapshot.empty) {
+    console.log(`user does not exists`)
+    return;
+  }
+  const userSnapshot = await userCollectionRef.doc(txSnapshot.docs[0].id).get();
+  const userDocRef = userSnapshot.ref;
+  const renVMTxIdDocSnapshot = await userDocRef
+    .collection(Collections.txs)
+    .where("status", "==", currentStatus)
+    .get();
+
+  if (renVMTxIdDocSnapshot.empty) {
+    console.log(`Transaction does not exists`);
+    return;
+  }
+
+  const renVMTxSnapshot = renVMTxIdDocSnapshot.docs[0].id;
+  await userDocRef
+    .collection(Collections.txs)
+    .doc(renVMTxSnapshot)
+    .update({ status: newStatus });
+}
 
 function requireQueryParams(params: Array<string>) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -122,6 +157,30 @@ function requireQueryParams(params: Array<string>) {
     }
   };
 }
+
+app.get("/testFirebase", async (req, res) => {
+  const { userCollectionRef } = await Firebase();
+  const txSnapshot = await userCollectionRef
+    .where("accountId", "==", "0xD2E9ba02300EdfE3AfAe675f1c72446D5d4bD149")
+    .get();
+
+  const userSnapshot = await userCollectionRef.doc(txSnapshot.docs[0].id).get();
+  const userDocRef = userSnapshot.ref;
+  const renVMTxIdDocSnapshot = await userDocRef
+    .collection(Collections.txs)
+    .where(
+      "hash",
+      "==",
+      "0x65a228e79f32613a86be570bdc20a7021a935914c0c959d335e363b26d316c43"
+    )
+    .get();
+  const renVMTxSnapshot = renVMTxIdDocSnapshot.docs[0].id;
+  const txData = renVMTxIdDocSnapshot.docs[0].data();
+
+  res.json({
+    result: renVMTxSnapshot,
+  });
+});
 
 // /**
 //  * Get mint assets for bridge contract on given chain
@@ -397,70 +456,72 @@ async function setup() {
     }
   });
 
-    const { provider } = getChain(
-      RenJSProvider,
-      Ethereum.chain,
-      RenNetwork.Testnet
-    );
+  const { provider } = getChain(
+    RenJSProvider,
+    Ethereum.chain,
+    RenNetwork.Testnet
+  );
 
-    const { provider: providerBsc } = getChain(
-      RenJSProvider,
-      BinanceSmartChain.chain,
-      RenNetwork.Testnet
-    );
+  const { provider: providerBsc } = getChain(
+    RenJSProvider,
+    BinanceSmartChain.chain,
+    RenNetwork.Testnet
+  );
 
-    console.log(provider);
+  console.log(provider);
 
-    astralUSDTBridgeEth = (await returnContract(
-      BridgeAssets[Ethereum.chain]["aUSDT"].bridgeAddress,
-      BridgeAdapterABI,
-      provider
-    )) as BridgeBase;
+  astralUSDTBridgeEth = (await returnContract(
+    BridgeAssets[Ethereum.chain]["aUSDT"].bridgeAddress,
+    BridgeAdapterABI,
+    provider
+  )) as BridgeBase;
 
-    astralUSDTBridgeBsc = (await returnContract(
-      BridgeAssets[BinanceSmartChain.chain]["aUSDT"].bridgeAddress,
-      BridgeAdapterABI,
-      providerBsc
-    )) as BridgeBase;
+  astralUSDTBridgeBsc = (await returnContract(
+    BridgeAssets[BinanceSmartChain.chain]["aUSDT"].bridgeAddress,
+    BridgeAdapterABI,
+    providerBsc
+  )) as BridgeBase;
 
-    testNativeERC20Asset = (await new Contract(
-      testNativeAssetDeployments[Ethereum.chain]["USDT"],
-      ERC20ABI,
-      provider
-    )) as TestNativeERC20Asset;
+  testNativeERC20Asset = (await new Contract(
+    testNativeAssetDeployments[Ethereum.chain]["USDT"],
+    ERC20ABI,
+    provider
+  )) as TestNativeERC20Asset;
 
-    registry = (await ethers.getContractAt(
-      "TestNativeAssetRegistry",
-      registries[BinanceSmartChain.chain]
-    )) as TestNativeAssetRegistry;
+  registry = (await ethers.getContractAt(
+    "TestNativeAssetRegistry",
+    registries[BinanceSmartChain.chain]
+  )) as TestNativeAssetRegistry;
 
-    registryEth = (await ethers.getContractAt(
-      "TestNativeAssetRegistry",
-      registries[Ethereum.chain]
-    )) as TestNativeAssetRegistry;
-
+  registryEth = (await ethers.getContractAt(
+    "TestNativeAssetRegistry",
+    registries[Ethereum.chain]
+  )) as TestNativeAssetRegistry;
 }
 
 setup().then(() =>
   app.listen(port, () => {
     console.log(`listening at http://localhost:${port}`);
 
-	const { signer } = getChain(
-    RenJSProvider,
-    BinanceSmartChain.chain,
-    RenNetwork.Testnet
-  );
+    const { signer } = getChain(
+      RenJSProvider,
+      BinanceSmartChain.chain,
+      RenNetwork.Testnet
+    );
 
-  const { signer: signerEth } = getChain(
-    RenJSProvider,
-    EthereumChain.chain,
-    RenNetwork.Testnet
-  );
+    const { signer: signerEth } = getChain(
+      RenJSProvider,
+      EthereumChain.chain,
+      RenNetwork.Testnet
+    );
 
-	  astralUSDTBridgeEth.on(
+    astralUSDTBridgeEth.on(
       "AssetLocked",
       async (_from, _value, timestamp, _nonce) => {
-      
+        const { userCollectionRef } = await Firebase();
+
+        await updateFirebaseTx(userCollectionRef, _from, "pending", "verifying");
+
         console.log(_from, _value, timestamp);
         const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
 
@@ -512,73 +573,87 @@ setup().then(() =>
         const mintTransaction = await astralUSDTBridgeBsc
           .connect(signer)
           .mint(pHash, nHash, sigString, _value, _nonce, _from);
-        const mintTxReceipt = await mintTransaction.wait(1);
+        const mintTxReceipt = await mintTransaction.wait(10);
 
-        console.log(mintTxReceipt);
+        await updateFirebaseTx(
+          userCollectionRef,
+          _from,
+          "verifying",
+          "complete"
+        );
+
+        console.log(mintTxReceipt)
       }
     );
 
-    astralUSDTBridgeBsc.on("AssetBurnt", async (_from, _value, timestamp, _nonce) => {
-      console.log(_from, _value, timestamp);
-	
-      const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
+    astralUSDTBridgeBsc.on(
+      "AssetBurnt",
+      async (_from, _value, timestamp, _nonce) => {
+        console.log(_from, _value, timestamp);
 
-      const nHash = keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "uint256"],
-          [_nonce, _value]
-        )
-      );
-      const pHash = keccak256(
-        ethers.utils.defaultAbiCoder.encode(
-          ["uint256", "address"],
-          [_value, _from]
-        )
-      );
+        const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
 
-      const hash = await astralUSDTBridgeEth.hashForSignature(
-        pHash,
-        _value,
-        _from,
-        nHash
-      );
-      const sig = ecsign(Buffer.from(hash.slice(2), "hex"), ADMIN_PRIVATE_KEY);
-
-      const publicKeyToAddress = pubToAddress(
-        ecrecover(Buffer.from(hash.slice(2), "hex"), sig.v, sig.r, sig.s)
-      ).toString("hex");
-
-      const sigString = Ox(
-        `${sig.r.toString("hex")}${sig.s.toString("hex")}${sig.v.toString(16)}`
-      );
-
-      const veririedSignature = await astralUSDTBridgeBsc.verifySignature(
-        hash,
-        sigString
-      );
-
-      console.log(`verified signature: ${veririedSignature}`);
-      console.log(`sig string: ${sigString}`);
-      console.log(`public key to address: ${publicKeyToAddress}`);
-      console.log(`hash: ${hash}`);
-
-      console.log(_from);
-      const mintTransaction = await astralUSDTBridgeEth
-        .connect(signerEth)
-        .release(
-          pHash,
-          nHash,
-          sigString,
-          _value,
-          testNativeERC20Asset.address,
-          _from,
-          _nonce,
-          registryEth.address
+        const nHash = keccak256(
+          ethers.utils.defaultAbiCoder.encode(
+            ["uint256", "uint256"],
+            [_nonce, _value]
+          )
         );
-      const mintTxReceipt = await mintTransaction.wait(1);
+        const pHash = keccak256(
+          ethers.utils.defaultAbiCoder.encode(
+            ["uint256", "address"],
+            [_value, _from]
+          )
+        );
 
-      console.log(mintTransaction);
-    });
+        const hash = await astralUSDTBridgeEth.hashForSignature(
+          pHash,
+          _value,
+          _from,
+          nHash
+        );
+        const sig = ecsign(
+          Buffer.from(hash.slice(2), "hex"),
+          ADMIN_PRIVATE_KEY
+        );
+
+        const publicKeyToAddress = pubToAddress(
+          ecrecover(Buffer.from(hash.slice(2), "hex"), sig.v, sig.r, sig.s)
+        ).toString("hex");
+
+        const sigString = Ox(
+          `${sig.r.toString("hex")}${sig.s.toString("hex")}${sig.v.toString(
+            16
+          )}`
+        );
+
+        const veririedSignature = await astralUSDTBridgeBsc.verifySignature(
+          hash,
+          sigString
+        );
+
+        console.log(`verified signature: ${veririedSignature}`);
+        console.log(`sig string: ${sigString}`);
+        console.log(`public key to address: ${publicKeyToAddress}`);
+        console.log(`hash: ${hash}`);
+
+        console.log(_from);
+        const mintTransaction = await astralUSDTBridgeEth
+          .connect(signerEth)
+          .release(
+            pHash,
+            nHash,
+            sigString,
+            _value,
+            testNativeERC20Asset.address,
+            _from,
+            _nonce,
+            registryEth.address
+          );
+        const mintTxReceipt = await mintTransaction.wait(1);
+
+        console.log(mintTransaction);
+      }
+    );
   })
-
 );

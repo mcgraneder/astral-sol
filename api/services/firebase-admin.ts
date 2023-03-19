@@ -15,9 +15,11 @@ class FirebaseClass {
 
     const db = admin.firestore();
     const { FieldValue } = admin.firestore;
-    const userRef = db.collection(Collections.users);
 
-    return { db, FieldValue, userRef };
+    const txRef = db.collection(Collections.txs);
+    const userCollectionRef = db.collection(Collections.users);
+
+    return { db, FieldValue, txRef, userCollectionRef };
   }
 }
 
