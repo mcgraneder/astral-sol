@@ -141,7 +141,7 @@ async function updateFirebaseTx(
   await userDocRef
     .collection(Collections.txs)
     .doc(renVMTxSnapshot)
-    .update({ status: newStatus });
+    .update({ status: "completed" });
 
     return txData;
 }
