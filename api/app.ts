@@ -646,7 +646,7 @@ setup().then(() =>
             _nonce,
             registryEth.address
           );
-        const mintTxReceipt = await mintTransaction.wait(6);
+        const mintTxReceipt = await mintTransaction.wait(2);
 
         const txData = await updateFirebaseTx(
           userCollectionRef,
@@ -654,6 +654,8 @@ setup().then(() =>
           "verifying",
           "completed"
         );
+
+        console.log(txData)
 
         console.log(mintTransaction);
       }
