@@ -1,7 +1,3 @@
-# Astral Brridge Contracts Post Ren SDK
-
-this repo has only been created so i can develop the bridge contracts external to the main astral backend. Since my commits are tied to an api server, developing contracts is more cumbersome so i have abstracted the bridge to this repo
-
 # Astral Bridge
 the ideas seen in the Astral contracts are inspired from the bridge flow hat the Ren protocol uses. That is when a user wants to move asset A from blockchain X to blockchain Y, the orgignal Asset A is locked up in a vault. then once a few security paraeteres have been met (explained below) we can mint a ERC-20 synthetic version of the original token on the destination chain with a 1:1 peg. Since i am building this solo and for hobby astral assets do no refleect ther counterpart. but in such a scenario luiquidty would be provided to make sure that the synth assets has a peg to th real ones
 
