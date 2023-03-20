@@ -27,5 +27,5 @@ But can do better: a multi-signature system with aggregated signatures. Signatur
 
 Right now the astral bridge just uses the admin private key to use the ECDSA standard for verifying a mint or release transaction. However using the above shcheme we can implementd a more trustless model. Aso of now i have started working on an SMPC implementation in typescript that i will need to take time to develop as i am learning a lot of these concepts as i go. For now i will continue to update this repo as the smart contracts themselves develop, but until i develop a SMPC verification model this Bridge implementation will remain centralised.
 
-## to view core astral backend visit
-https://github.com/mcgraneder/astral-sol
+## to view frontend
+https://github.com/mcgraneder/astral-bridge
