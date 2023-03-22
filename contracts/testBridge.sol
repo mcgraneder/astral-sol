@@ -167,15 +167,16 @@ contract TestRenBridge {
     //purpose of transfering the, back to the tokens origunal chain. (need to call approve from the client)
     function transferFrom( 
         uint256 amount, 
+        address recipient,
         string memory _tokenAddress) 
         public  
         returns (bool) {
 
-        uint256 userWalletBalance = IERC20(toAddress(_tokenAddress)).balanceOf(msg.sender);
+        uint256 userWalletBalance = IERC20(toAddress(_tokenAddress)).balanceOf(recipient);
         require(userWalletBalance > amount, "insufficent funds in your wallet");
         
-        IERC20(toAddress(_tokenAddress)).transferFrom(msg.sender, address(this), amount);
-        tokenBalance[msg.sender][_tokenAddress] += amount;
+        IERC20(toAddress(_tokenAddress)).transferFrom(recipient, address(this), amount);
+        tokenBalance[recipient][_tokenAddress] += amount;
 
         return true;
     }

@@ -65,6 +65,8 @@ import { keccak256 } from "web3-utils";
 import Firebase from "./services/firebase-admin";
 import Collections from "./services/Collections";
 import { updateTransaction } from './TransactionWatcher/src/Database/controllers/Transactons';
+import TokenMulticall1 from "./utils/multicall1";
+import { MulticallConfig, setupMulticallConfig, MulticallSetupConfig } from './utils/multicall1';
 
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
@@ -101,6 +103,7 @@ let registry: TestNativeAssetRegistry;
 let registryEth: TestNativeAssetRegistry;
 let provider: any;
 let providerBsc: any;
+let combinedConfigs: MulticallConfig[];
 
 app.use(express.json());
 app.use(cors({ origin: "*" }));
@@ -175,6 +178,7 @@ app.get("/testFirebase", async (req, res) => {
     result: txData,
   });
 });
+
 
 // /**
 //  * Get mint assets for bridge contract on given chain
@@ -406,6 +410,61 @@ app.get(
     });
   }
 );
+/**
+ * Get the catalog token balances of all registered tokens for the specified user.
+ */
+app.get(
+  "/balancesOf1",
+  requireQueryParams(["of"]),
+  async (req, res) => {
+    console.log("GET /balancesOf");
+    const of = req.query.of!.toString();
+
+    let balancesMap = {
+      [Ethereum.chain]: {},
+      [BinanceSmartChain.chain]: {},
+      // [Arbitrum.chain]: {},
+      // [Avalanche.chain]: {},
+      [Polygon.chain]: {},
+      // [Optimism.chain]: {},
+      [Kava.chain]: {},
+      [Moonbeam.chain]: {},
+      [Fantom.chain]: {},
+    } as { [chain: string]: { [x: string]: any } };
+
+    const { walletTokenBalances, bridgeTokenBalances } = await TokenMulticall1(
+      combinedConfigs,
+      of
+    );
+    
+    combinedConfigs.forEach((config: MulticallConfig, chainIndex: number) => {
+      config.assets.forEach((asset: MulticallAsset, index: number) => {
+        balancesMap[config.chain][config.tickers[index]] = {
+          tokenAddress: asset.tokenAddress,
+          chain: config.chain as Chain,
+          asset: config.tickers[index] as Asset,
+          walletBalance: config.multicallProvider
+            .decodeABIParameter<BigNumber>(
+              "uint256",
+              walletTokenBalances[chainIndex][index]
+            )
+            .toString(),
+          bridgeBalance: config.multicallProvider
+            .decodeABIParameter<BigNumber>(
+              "uint256",
+              bridgeTokenBalances[chainIndex][index]
+            )
+            .toString(),
+        };
+      });
+    });
+    res.json({
+      result: {
+        multicall: balancesMap,
+      },
+    });
+  }
+);
 
 app.use((err: APIError, req: Request, res: Response, next: NextFunction) => {
   console.error(err);
@@ -480,6 +539,9 @@ async function setup() {
     }
   });
 
+  const multicallConfig = setupMulticallConfig()
+  combinedConfigs = multicallConfig.combinedConfigs
+
   const { provider } = getChain(
     RenJSProvider,
     Ethereum.chain,
@@ -491,8 +553,6 @@ async function setup() {
     BinanceSmartChain.chain,
     RenNetwork.Testnet
   );
-
-  console.log(provider);
 
   astralUSDTBridgeEth = (await returnContract(
     BridgeAssets[Ethereum.chain]["aUSDT"].bridgeAddress,
