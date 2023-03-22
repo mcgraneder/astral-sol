@@ -78,8 +78,8 @@ export const registries: { [chain: string]: string } = {
 };
 
 export const BridgeFactory: { [chain: string]: string } = {
-  [Ethereum.chain]: "0x77Fee29643b20571B25c2B1BA40D29dEFe3ec143",
-  [BinanceSmartChain.chain]: "0x754D39d9178C59549D2734330451A88eD909a310",
+  [Ethereum.chain]: "0xfa141247477D8f03100155e084767Aaf48e4Cfab",
+  [BinanceSmartChain.chain]: "0x6cAE43dEAc56291fFb04EC293D49b9cd053919B8",
 };
 
 export const BridgeAssets: {
@@ -87,14 +87,14 @@ export const BridgeAssets: {
 } = {
   [Ethereum.chain]: {
     ["aUSDT"]: {
-      tokenAddress: "0xb7fEB55476D3fC26724Ba23794FB9c723c71b9b0",
-      bridgeAddress: "0xf3894e0289300a43dD7f0E0e852058011377CD26",
+      tokenAddress: "0x11B364AF13f157a790CD5dB2E768e533b4972d63",
+      bridgeAddress: "0x53de366dA21a6F3cF477C2Fbb238a9a4bbBF0002",
     },
   },
   [BinanceSmartChain.chain]: {
     ["aUSDT"]: {
-      tokenAddress: "0xD93521D9E6B21D54D5276203848f1397624De87A",
-      bridgeAddress: "0xcB0aB22B59a6A4d30E9cB06AF234Cad3B2Ad9658",
+      tokenAddress: "0x8b4F896F83a52dE9ee19f41eaFa7abe35007Ce47",
+      bridgeAddress: "0x1A4006a7636F2715F8Fc51991708ff201cbd8c4b",
     },
   },
 };
