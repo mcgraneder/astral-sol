@@ -52,7 +52,6 @@ import AstralERC20AssetABI from "../constants/ABIs/AstralERC20AssetABI.json";
 import BridgeAdapterABI from "../constants/ABIs/BridgeAdapterABI.json";
 import BridgeFactoryABI from "../constants/ABIs/BridgeFactoryABI.json";
 import TestNativeAssetRegistryABI from "../constants/ABIs/TestNativeAssetRegistryABI.json";
-import TestNativeERC20AssetABI from "../constants/ABIs/TestNativeERC20AssetABI.json";
 import {
   BridgeAssets,
   testNativeAssetDeployments,
