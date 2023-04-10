@@ -40,7 +40,7 @@ import { RenBridge } from "../typechain-types/Bridge.sol/RenBridge";
 import { BridgeDeployments } from "../utils/deployments";
 import BridgeABI from "../utils/ABIs/BridgeABI.json";
 import { returnContract } from "./utils/getContract";
-import { IERC20 } from "../typechain-types";
+import { ERC20__factory, ForwarderV2__factory, IERC20, Staking__factory } from "../typechain-types";
 import { ERC20ABI } from "@renproject/chains-ethereum/contracts";
 import { BigNumber as BN } from "ethers";
 import { Contract } from "@ethersproject/contracts";
@@ -67,7 +67,7 @@ import Collections from "./services/Collections";
 import { updateTransaction } from './TransactionWatcher/src/Database/controllers/Transactons';
 import TokenMulticall1 from "./utils/multicall1";
 import { MulticallConfig, setupMulticallConfig, MulticallSetupConfig } from './utils/multicall1';
-
+import { PopulatedTransaction } from "ethers";
 const isAddressValid = (address: string): boolean => {
   if (/^0x[a-fA-F0-9]{40}$/.test(address)) return true;
   return false;
@@ -149,6 +149,74 @@ async function updateFirebaseTx(
     return txData;
 }
 
+
+
+export interface UserOp {
+  to: string;
+  amount: string;
+  data: string;
+}
+
+export interface Transaction {
+  userOps: UserOp[];
+  chainID: number;
+  signature: string;
+}
+
+function parseContractError(err: any): string {
+  return (
+    err as {
+      reason: string;
+    }
+  ).reason;
+}
+
+const getMetaTxTypedData = async (
+  userOps: UserOp[],
+  sigChainID: number,
+  chainId: number,
+  from?: string
+) => {
+  const domain = {
+    name: "Executor",
+    version: "0.0.1",
+    chainId: sigChainID,
+    verifyingContract: "0x96B3059bA1785120aa072a6dcA329acc8C8FA324",
+  };
+
+  const types = {
+    UserOperation: [
+      { name: "to", type: "address" },
+      { name: "amount", type: "uint256" },
+      { name: "data", type: "bytes" },
+    ],
+    ECDSAExec: [
+      { name: "userOps", type: "UserOperation[]" },
+      { name: "nonce", type: "uint256" },
+      { name: "chainID", type: "uint256" },
+      { name: "sigChainID", type: "uint256" },
+    ],
+  };
+
+  const forwarder = await ForwarderV2__factory.connect(
+    "0xc82993eFc2B02bC4Df602D6De1cb70aC90b4DED2",
+    (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+  );
+  const nonce = await forwarder.getNonce(from!);
+  const values = {
+    userOps: userOps,
+    nonce: nonce,
+    chainID: chainId,
+    sigChainID: sigChainID,
+  };
+
+  return {
+    domain,
+    types,
+    values,
+  };
+};
+
 function requireQueryParams(params: Array<string>) {
   return (req: Request, res: Response, next: NextFunction) => {
     const fails: string[] = [];
@@ -165,6 +233,214 @@ function requireQueryParams(params: Array<string>) {
   };
 }
 
+app.get(
+  "/SwapTxTypedData",
+  requireQueryParams([
+    "chainID",
+    "sigChainID",
+    "token",
+    "amount",
+    "from",
+  ]),
+  async (req, res) => {
+    const chainID = parseInt(req.query.chainID!.toString());
+    const sigChainID = parseInt(req.query.sigChainID!.toString());
+    const tokenAddress = req.query.token!.toString();
+    const amount = req.query.amount!.toString();
+    const from = req.query.from!.toString();
+
+    const { signer } = getChain(
+      RenJSProvider,
+      "BinanceSmartChain",
+      RenNetwork.Testnet
+    );
+    const tokenContract = await ERC20__factory.connect(
+      tokenAddress,
+      (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+    );
+    const depositer = await Staking__factory.connect(
+      "0x678Ae5BFfFAb5320F33673149228Ed3F8a02D532",
+      (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+    );
+    const tx1 = await depositer
+      .connect(signer)
+      .populateTransaction.depositTokensToForwarder(
+        amount,
+        tokenContract.address,
+        from,
+        "0xc82993eFc2B02bC4Df602D6De1cb70aC90b4DED2",
+        {
+          gasLimit: 2000000,
+        }
+      );
+    const tx2 = await tokenContract
+      .connect(signer)
+      .populateTransaction.approve(
+        "0xD99D1c33F9fC3444f8101754aBC46c52416550D1",
+        amount
+      );
+
+    const userOps: UserOp[] = [
+      {
+        to: depositer.address,
+        amount: "0",
+        data: tx1?.data!,
+      },
+      {
+        to: tokenContract.address,
+        amount: "0",
+        data: tx2?.data!,
+      },
+    ];
+    const typedData = await getMetaTxTypedData(
+      userOps,
+      sigChainID,
+      chainID,
+      from
+    );
+    console.log(typedData);
+    res.json({ result: typedData });
+  }
+);
+
+app.get(
+  "/TxTypedData",
+  requireQueryParams(["chainID", "sigChainID", "token", "to", "amount", "from", "transactionType"]),
+  async (req, res) => {
+    console.log("GET /transferTxTypedData");
+    const chainID = parseInt(req.query.chainID!.toString());
+    const sigChainID = parseInt(req.query.sigChainID!.toString());
+    const tokenAddress = req.query.token!.toString();
+    const to = req.query.to!.toString();
+    const amount = req.query.amount!.toString();
+    const from = req.query.from!.toString();
+    const transactionType = req.query.transactionType!.toString();
+
+    
+    const { signer } = getChain(RenJSProvider, "BinanceSmartChain", RenNetwork.Testnet)
+    const tokenContract = await ERC20__factory.connect(
+      tokenAddress,
+      (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+    );
+    const depositer = await Staking__factory.connect(
+      "0x678Ae5BFfFAb5320F33673149228Ed3F8a02D532",
+      (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+    );
+    let tx2: PopulatedTransaction | null = null
+    let tx3: PopulatedTransaction | null = null
+
+    if (transactionType === "Deposit") {
+
+      tx2 = await depositer
+        .connect(signer)
+        .populateTransaction.depositTokens(
+          amount,
+          from,
+          tokenContract.address,
+          { gasLimit: 2000000 }
+        );
+
+      // tx3 = await tokenContract
+      //   .connect(signer)
+      //   .populateTransaction.transfer(
+      //     "0x081B3edA60f50631E5e966ED75bf6598cF69ee3C",
+      //     amount,
+      //     { gasLimit: 2000000 }
+      //   );
+    } else if (
+      transactionType === "Withdraw" 
+      || transactionType === "Transfer"
+    ) {
+      tx2 =
+        transactionType === "Withdraw"
+          ? await depositer
+              .connect(signer)
+              .populateTransaction.withdrawTokens(
+                amount,
+                to,
+                from,
+                tokenContract.address,
+                { gasLimit: 2000000 }
+              )
+          : await depositer
+              .connect(signer)
+              .populateTransaction.withdrawTokens(
+                amount,
+                from,
+                from,
+                tokenContract.address,
+                { gasLimit: 2000000 }
+              );
+    }
+
+    const userOps: UserOp[] = [
+      {
+        to: depositer.address,
+        amount: "0",
+        data: tx2?.data!,
+      },
+    ];
+    const typedData = await getMetaTxTypedData(
+      userOps,
+      sigChainID,
+      chainID,
+      from
+    );
+    console.log(typedData);
+    res.json({ result: typedData });
+  }
+);
+
+
+app.post("/submitRelayTx", async (req, res) => {
+  console.log("POST /submitRelayTx");
+  console.log(req.body);
+  const forwardRequest = req.body["forwardRequest"];
+  const signature = req.body["signature"];
+
+  //handle case where this mapping returns null for unsupported chainId
+  const forwarder = await ForwarderV2__factory.connect(
+    "0xc82993eFc2B02bC4Df602D6De1cb70aC90b4DED2",
+    (RenJSProvider.getChain("BinanceSmartChain") as EthereumBaseChain).signer!
+  );
+  const { signer } = getChain(RenJSProvider, "BinanceSmartChain", RenNetwork.Testnet)
+  const gasPrice = await forwarder!.provider.getGasPrice();
+   try {
+     const gas = await forwarder!.estimateGas.exec(
+       forwardRequest,
+       signature,
+       req.body["from"]
+     );
+     console.log("check")
+     const txCost = gasPrice.mul(gas);
+     const ADMIN = signer.getAddress();
+      console.log("check1");
+     const isPayingRelayer =
+       forwardRequest.to === ADMIN || forwardRequest.value > 0;
+
+     if (isPayingRelayer && txCost.gt(forwardRequest.amount)) {
+       res.status(402).send({ error: "Insufficient fee payment" });
+       return;
+     }
+   } catch (err: any) {
+     console.log(400, parseContractError(err));
+     res.status(400).send({ error: parseContractError(err) });
+     return;
+   } console.log("check2");
+   const execTx = await forwarder.populateTransaction.exec(
+     forwardRequest,
+     signature,
+     req.body["from"],
+     { gasLimit: 2000000 }
+   );
+    console.log("check3");
+   const walletTx = await signer.sendTransaction(execTx);
+   const reciept = await walletTx.wait(1);
+   console.log(reciept);
+  res.status(200).json({ success: true });
+});
+
+
 app.get("/testFirebase", async (req, res) => {
   const { userCollectionRef } = await Firebase();
   const txData = await updateFirebaseTx(
@@ -178,6 +454,7 @@ app.get("/testFirebase", async (req, res) => {
     result: txData,
   });
 });
+
 
 
 // /**
@@ -607,6 +884,7 @@ setup().then(() =>
         // await updateFirebaseTx(userCollectionRef, _from, "pending", "verifying");
 
         console.log(_from, _value, timestamp);
+        console.log(ADMIN_KEY)
         const ADMIN_PRIVATE_KEY = Buffer.from(ADMIN_KEY, "hex");
 
         const nHash = keccak256(
