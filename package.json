@@ -30,6 +30,8 @@
     "@openzeppelin/contracts": "^4.4.1",
     "@openzeppelin/contracts-upgradeable": "4.3.3",
     "@openzeppelin/gsn-helpers": "^0.2.4",
+    "@renproject/chains": "^3.5.2",
+    "@renproject/chains-bitcoin": "^3.5.2",
     "@renproject/chains-ethereum": "^3.5.2",
     "@renproject/gateway-sol": "^2.0.6",
     "@renproject/mock-provider": "^3.5.2",
